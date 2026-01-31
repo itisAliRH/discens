@@ -10,6 +10,7 @@ import {
 } from 'react-icons/lu';
 import LanguageSelector from '@/components/ui/LanguageSelector';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import UserMenu from '@/components/ui/UserMenu';
 
 /**
  * Main app layout with navigation
@@ -47,12 +48,7 @@ export default function MainLayout({
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <LanguageSelector />
-            <Link
-              href="/profile"
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-colors"
-            >
-              <LuUser className="w-4 h-4" />
-            </Link>
+            <UserMenu />
           </div>
         </div>
       </header>
