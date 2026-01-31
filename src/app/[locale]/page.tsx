@@ -49,48 +49,6 @@ export default function HomePage() {
         <div className="absolute bottom-20 -left-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-5xl mx-auto px-4 py-20 md:py-32">
-          {/* Header - Fixed at top */}
-          <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
-            <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-                  D
-                </div>
-                <span className="font-bold text-xl">Discens</span>
-              </div>
-              <div className="flex items-center gap-3">
-                {isLoggedIn === null ? (
-                  <div className="w-20 h-8 bg-muted animate-pulse rounded-lg" />
-                ) : isLoggedIn ? (
-                  <Link
-                    href="/dashboard"
-                    className="px-5 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                ) : (
-                  <>
-                    <Link
-                      href="/login"
-                      className="px-4 py-2 text-sm font-medium hover:text-primary transition-colors"
-                    >
-                      Log in
-                    </Link>
-                    <button
-                      onClick={handleGetStarted}
-                      className="px-5 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
-                    >
-                      Get Started
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </nav>
-
-          {/* Spacer for fixed header */}
-          <div className="h-16" />
-
           {/* Hero Content */}
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">

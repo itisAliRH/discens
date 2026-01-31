@@ -3,6 +3,7 @@ import { getMessages } from 'next-intl/server';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
+import Navbar from '@/components/ui/Navbar';
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -32,6 +33,7 @@ export default async function LocaleLayout({
         enableSystem
         themes={['light', 'dark', 'system']}
       >
+        <Navbar />
         {children}
       </ThemeProvider>
     </NextIntlClientProvider>

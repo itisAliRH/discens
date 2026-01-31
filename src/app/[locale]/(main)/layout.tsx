@@ -8,9 +8,6 @@ import {
   LuHistory,
   LuUser,
 } from 'react-icons/lu';
-import LanguageSelector from '@/components/ui/LanguageSelector';
-import ThemeToggle from '@/components/ui/ThemeToggle';
-import UserMenu from '@/components/ui/UserMenu';
 
 /**
  * Main app layout with navigation
@@ -23,36 +20,6 @@ export default function MainLayout({
 }) {
   return (
     <div className="min-h-dvh flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
-              D
-            </div>
-            <span className="font-semibold hidden sm:block">Discens</span>
-          </Link>
-
-          {/* Navigation */}
-          <nav className="flex items-center gap-1">
-            <NavLink href="/dashboard" icon={<LuHouse />} label="Home" />
-            <NavLink href="/learn" icon={<LuBookOpen />} label="Learn" />
-            <NavLink href="/review" icon={<LuRotateCcw />} label="Review" />
-            <NavLink href="/conversation" icon={<LuMessageCircle />} label="Talk" />
-            <NavLink href="/history" icon={<LuHistory />} label="History" />
-            <NavLink href="/memory" icon={<LuBrain />} label="Memory" />
-          </nav>
-
-          {/* Right side: Theme toggle + Language selector + User menu */}
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <LanguageSelector />
-            <UserMenu />
-          </div>
-        </div>
-      </header>
-
       {/* Main content */}
       <main className="flex-1">
         {children}
@@ -72,18 +39,6 @@ export default function MainLayout({
       {/* Spacer for mobile nav */}
       <div className="h-16 sm:hidden" />
     </div>
-  );
-}
-
-function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-    >
-      <span className="w-4 h-4">{icon}</span>
-      <span className="text-sm">{label}</span>
-    </Link>
   );
 }
 
