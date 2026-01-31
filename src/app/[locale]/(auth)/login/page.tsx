@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, Suspense, useEffect } from 'react';
 import type { Memory } from '@/types/database';
+import { useTranslations } from 'next-intl';
 
 function LoginForm() {
+  const t = useTranslations('auth.login');
   const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
@@ -78,7 +80,7 @@ function LoginForm() {
 
         setMessage({
           type: 'success',
-          text: 'Check your email for a confirmation link!',
+          text: t('signUpSuccess') || 'Check your email for a confirmation link!',
         });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -129,7 +131,7 @@ function LoginForm() {
     if (!supabase) return;
     
     if (!email) {
-      setMessage({ type: 'error', text: 'Please enter your email address' });
+      setMessage({ type: 'error', text: t('emailRequired') || 'Please enter your email address' });
       return;
     }
 
@@ -148,7 +150,7 @@ function LoginForm() {
 
       setMessage({
         type: 'success',
-        text: 'Check your email for a magic link!',
+        text: t('magicLinkSuccess') || 'Check your email for a magic link!',
       });
     } catch (err) {
       setMessage({
@@ -171,12 +173,12 @@ function LoginForm() {
             </div>
           </Link>
           <h1 className="text-2xl font-bold">
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
+            {isSignUp ? t('signUpTitle') : t('title')}
           </h1>
           <p className="text-muted-foreground mt-1">
             {isSignUp
-              ? 'Start your language learning journey'
-              : 'Continue your language learning journey'}
+              ? t('signUpSubtitle')
+              : t('subtitle')}
           </p>
         </div>
 
@@ -218,7 +220,7 @@ function LoginForm() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Continue with Google
+            {t('continueWith')} {t('google')}
           </button>
 
           <button
@@ -229,7 +231,7 @@ function LoginForm() {
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
             </svg>
-            Continue with Apple
+            {t('continueWith')} {t('apple')}
           </button>
         </div>
 
@@ -240,7 +242,7 @@ function LoginForm() {
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-4 bg-background text-muted-foreground">
-              or continue with email
+              {t('orEmail')}
             </span>
           </div>
         </div>
@@ -249,14 +251,14 @@ function LoginForm() {
         <form onSubmit={handleEmailAuth} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-2">
-              Email
+              {t('email')}
             </label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t('emailPlaceholder')}
               required
               className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -265,14 +267,14 @@ function LoginForm() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label htmlFor="password" className="block text-sm font-medium">
-                Password
+                {t('password')}
               </label>
               {!isSignUp && (
                 <Link
                   href="/forgot-password"
                   className="text-sm text-primary hover:underline"
                 >
-                  Forgot password?
+                  {t('forgotPassword')}
                 </Link>
               )}
             </div>
@@ -294,10 +296,10 @@ function LoginForm() {
             className="w-full px-4 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {isLoading
-              ? 'Loading...'
+              ? t('loading')
               : isSignUp
-              ? 'Create Account'
-              : 'Sign In'}
+              ? t('signUpButton')
+              : t('loginButton')}
           </button>
         </form>
 
@@ -307,12 +309,12 @@ function LoginForm() {
           disabled={isLoading}
           className="w-full mt-3 px-4 py-3 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
         >
-          Send Magic Link
+          {t('magicLink')}
         </button>
 
         {/* Toggle Sign Up / Sign In */}
         <p className="text-center mt-6 text-muted-foreground">
-          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          {isSignUp ? t('hasAccount') : t('noAccount')}{' '}
           <button
             onClick={() => {
               setIsSignUp(!isSignUp);
@@ -320,7 +322,7 @@ function LoginForm() {
             }}
             className="text-primary hover:underline font-medium"
           >
-            {isSignUp ? 'Sign In' : 'Sign Up'}
+            {isSignUp ? t('loginButton') : t('signUp')}
           </button>
         </p>
       </div>
@@ -329,10 +331,12 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const t = useTranslations('common');
+  
   return (
     <Suspense fallback={
       <main className="min-h-dvh flex items-center justify-center">
-        <div className="animate-pulse">Loading...</div>
+        <div className="animate-pulse">{t('loading')}</div>
       </main>
     }>
       <LoginForm />
