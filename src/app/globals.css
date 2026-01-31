@@ -224,3 +224,16 @@ input:disabled {
 .animate-pulse-glow {
   animation: pulse-glow 2s infinite;
 }
+
+/* Animation delays for staggered effects */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
