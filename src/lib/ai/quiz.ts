@@ -1,14 +1,11 @@
 import OpenAI from 'openai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import type { QuizType } from '@/types/database';
 
-// Initialize clients
+// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 // ============================================
 // QUIZ SCHEMAS
@@ -78,7 +75,7 @@ interface GenerateQuizOptions {
 }
 
 /**
- * Generate quiz questions from learning materials
+ * Generate quiz questions from learning materials using OpenAI
  */
 export async function generateQuiz(options: GenerateQuizOptions): Promise<{
   success: boolean;
@@ -189,20 +186,27 @@ Return JSON:
   } catch (error) {
     console.error('Quiz generation error:', error);
     
-    // Fallback to Gemini
+    // Retry with GPT-4o if gpt-4o-mini fails
     try {
-      const model = gemini.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
-      const text = result.response.text();
-      
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      const retryResponse = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.7,
+        max_tokens: 4000,
+      });
+
+      const content = retryResponse.choices[0].message.content;
+      if (content) {
+        const parsed = JSON.parse(content);
         const validated = QuizBatchSchema.parse(parsed);
         return { success: true, questions: validated };
       }
-    } catch (fallbackError) {
-      console.error('Gemini fallback error:', fallbackError);
+    } catch (retryError) {
+      console.error('Retry with GPT-4o failed:', retryError);
     }
 
     return {

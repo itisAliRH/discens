@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { GoogleGenAI } from '@google/genai';
 
 /**
  * OpenAI Client Configuration
@@ -7,14 +6,6 @@ import { GoogleGenAI } from '@google/genai';
  */
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
-
-/**
- * Google Gemini Client Configuration
- * Used for: Gemini 2.0 Flash (multimodal), Gemini 1.5 Pro (fallback)
- */
-export const gemini = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
 });
 
 /**
@@ -26,10 +17,8 @@ export const MODELS = {
   CONVERSATION: 'gpt-4o' as const,           // Real conversations, role-play
   STRUCTURED: 'gpt-4o-mini' as const,        // Quiz generation, structured outputs
   ANALYSIS: 'gpt-4o-mini' as const,          // Memory analysis, mistake patterns
-  
-  // Gemini Models  
-  MULTIMODAL: 'gemini-2.0-flash' as const,   // Video/audio content analysis
-  FALLBACK: 'gemini-1.5-flash' as const,     // Cost-effective fallback
+  MULTIMODAL: 'gpt-4o' as const,             // Content with images/audio
+  FALLBACK: 'gpt-4o-mini' as const,          // Cost-effective fallback
 } as const;
 
 /**
@@ -37,12 +26,12 @@ export const MODELS = {
  * Defines which model to use for each feature
  */
 export const FEATURE_MODELS = {
-  quizGeneration: { primary: MODELS.STRUCTURED, fallback: MODELS.MULTIMODAL },
-  realConversation: { primary: MODELS.CONVERSATION, fallback: MODELS.FALLBACK },
-  memorySummary: { primary: MODELS.STRUCTURED, fallback: MODELS.MULTIMODAL },
-  mistakeAnalysis: { primary: MODELS.ANALYSIS, fallback: MODELS.MULTIMODAL },
-  videoAnalysis: { primary: MODELS.MULTIMODAL, fallback: null },
-  levelAssessment: { primary: MODELS.CONVERSATION, fallback: MODELS.FALLBACK },
+  quizGeneration: { primary: MODELS.STRUCTURED, fallback: MODELS.FALLBACK },
+  realConversation: { primary: MODELS.CONVERSATION, fallback: MODELS.STRUCTURED },
+  memorySummary: { primary: MODELS.STRUCTURED, fallback: MODELS.FALLBACK },
+  mistakeAnalysis: { primary: MODELS.ANALYSIS, fallback: MODELS.FALLBACK },
+  videoAnalysis: { primary: MODELS.MULTIMODAL, fallback: MODELS.STRUCTURED },
+  levelAssessment: { primary: MODELS.CONVERSATION, fallback: MODELS.STRUCTURED },
 } as const;
 
 export type ModelType = typeof MODELS[keyof typeof MODELS];
