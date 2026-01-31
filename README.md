@@ -94,9 +94,9 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 
 ## Deployment
 
-### Deploy to Cloudflare Pages
+### Deploy to Cloudflare Pages (Recommended)
 
-See our comprehensive [Cloudflare Deployment Guide](./docs/CLOUDFLARE_DEPLOYMENT.md) for step-by-step instructions on deploying to Cloudflare Pages with GitHub Actions.
+See our comprehensive [Cloudflare Deployment Guide](./docs/CLOUDFLARE_DEPLOYMENT.md) for step-by-step instructions on deploying to Cloudflare Pages via the dashboard. No GitHub Actions required - just connect your repo and deploy!
 
 ### Deploy to Vercel
 
