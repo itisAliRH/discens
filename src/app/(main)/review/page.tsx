@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface ReviewCard {
   id: string;
@@ -43,6 +44,8 @@ interface SessionState {
 export default function ReviewPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<'auth' | 'setup' | 'generic'>('generic');
   const [session, setSession] = useState<SessionState | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isRating, setIsRating] = useState(false);
@@ -50,30 +53,29 @@ export default function ReviewPage() {
   // Fetch due cards
   useEffect(() => {
     async function loadCards() {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'Starting cards load',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       try {
         const response = await fetch('/api/review/cards');
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'API response received',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
 
         if (!response.ok) {
-          const errorText = await response.text();
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'API error response',data:{errorText},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
-          throw new Error('Failed to load review cards');
+          const errorData = await response.json().catch(() => ({}));
+          
+          if (response.status === 401) {
+            setErrorType('auth');
+            setError('Please log in to access your reviews');
+          } else if (response.status === 404) {
+            setErrorType('setup');
+            setError('Complete your profile setup first');
+          } else {
+            setErrorType('generic');
+            setError(errorData.error || 'Failed to load review cards');
+          }
+          setIsLoading(false);
+          return;
         }
 
         const data = await response.json();
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'Cards data received',data:{cardsCount:data.cards?.length || 0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         
-        if (data.cards.length === 0) {
+        if (!data.cards || data.cards.length === 0) {
           setIsLoading(false);
           return;
         }
@@ -85,11 +87,10 @@ export default function ReviewPage() {
           startTime: Date.now(),
         });
         setIsLoading(false);
-      } catch (error) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'Cards load error',data:{error:error instanceof Error ? error.message : String(error)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
-        console.error('Load cards error:', error);
+      } catch (err) {
+        console.error('Load cards error:', err);
+        setErrorType('generic');
+        setError(err instanceof Error ? err.message : 'Failed to load review cards');
         setIsLoading(false);
       }
     }
@@ -134,8 +135,8 @@ export default function ReviewPage() {
       });
 
       setShowAnswer(false);
-    } catch (error) {
-      console.error('Rating error:', error);
+    } catch (err) {
+      console.error('Rating error:', err);
     } finally {
       setIsRating(false);
     }
@@ -162,29 +163,74 @@ export default function ReviewPage() {
     );
   }
 
+  // Error state with helpful actions
+  if (error) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="text-center bg-card border border-border rounded-2xl p-8">
+          <span className="text-6xl mb-4 block">
+            {errorType === 'auth' ? '🔐' : errorType === 'setup' ? '📝' : '😕'}
+          </span>
+          <h2 className="text-xl font-semibold mb-2">
+            {errorType === 'auth' ? 'Login Required' : 
+             errorType === 'setup' ? 'Setup Incomplete' : 'Oops!'}
+          </h2>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          
+          {errorType === 'auth' && (
+            <Link
+              href="/login"
+              className="inline-block px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+            >
+              Log In
+            </Link>
+          )}
+          
+          {errorType === 'setup' && (
+            <Link
+              href="/onboarding"
+              className="inline-block px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+            >
+              Complete Setup
+            </Link>
+          )}
+          
+          {errorType === 'generic' && (
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+            >
+              Back to Dashboard
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // No cards to review
   if (!session || session.cards.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="text-center">
+        <div className="text-center bg-card border border-border rounded-2xl p-8">
           <span className="text-6xl mb-4 block">🎉</span>
           <h2 className="text-2xl font-bold mb-2">All caught up!</h2>
           <p className="text-muted-foreground mb-6">
             No cards due for review right now. Come back later or learn new materials!
           </p>
           <div className="flex gap-4 justify-center">
-            <button
-              onClick={() => router.push('/learn')}
+            <Link
+              href="/learn"
               className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
             >
               Learn New
-            </button>
-            <button
-              onClick={() => router.push('/dashboard')}
+            </Link>
+            <Link
+              href="/dashboard"
               className="px-6 py-3 rounded-xl border border-border hover:bg-accent"
             >
               Dashboard
-            </button>
+            </Link>
           </div>
         </div>
       </div>

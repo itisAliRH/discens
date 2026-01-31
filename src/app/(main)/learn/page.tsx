@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { MultipleChoiceQuestion, TrueFalseQuestion, FillBlankQuestion, QuizBatch } from '@/lib/ai/quiz';
 
 type Question = (MultipleChoiceQuestion & { type: 'multiple_choice' }) 
@@ -25,6 +26,7 @@ export default function LearnPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<'auth' | 'setup' | 'materials' | 'generic'>('generic');
   const [session, setSession] = useState<SessionState | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [fillAnswer, setFillAnswer] = useState('');
@@ -38,9 +40,6 @@ export default function LearnPage() {
   // Fetch and start quiz
   useEffect(() => {
     async function loadQuiz() {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'Starting quiz load',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       try {
         const response = await fetch('/api/quiz/generate', {
           method: 'POST',
@@ -52,26 +51,29 @@ export default function LearnPage() {
           }),
         });
 
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'API response received',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-
         if (!response.ok) {
-          const errorText = await response.text();
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'API error response',data:{errorText},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-          // #endregion
-          throw new Error('Failed to load quiz');
+          const errorData = await response.json().catch(() => ({}));
+          
+          if (response.status === 401) {
+            setErrorType('auth');
+            setError('Please log in to start learning');
+          } else if (response.status === 404) {
+            setErrorType('setup');
+            setError('Complete your profile setup first');
+          } else {
+            setErrorType('generic');
+            setError(errorData.error || 'Failed to load quiz');
+          }
+          setIsLoading(false);
+          return;
         }
 
         const data = await response.json();
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'Quiz data received',data:{hasQuestions:!!data.questions,materialCount:data.materialCount},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         const questions = flattenQuestions(data.questions);
 
         if (questions.length === 0) {
-          setError('No materials available. Add some materials to your memory first!');
+          setErrorType('materials');
+          setError('No materials available yet');
           setIsLoading(false);
           return;
         }
@@ -88,9 +90,8 @@ export default function LearnPage() {
         });
         setIsLoading(false);
       } catch (err) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'Quiz load error',data:{error:err instanceof Error ? err.message : String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
+        console.error('Quiz load error:', err);
+        setErrorType('generic');
         setError(err instanceof Error ? err.message : 'Failed to load quiz');
         setIsLoading(false);
       }
@@ -236,20 +237,61 @@ export default function LearnPage() {
     );
   }
 
-  // Error state
+  // Error state with helpful actions
   if (error) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="text-center">
-          <span className="text-6xl mb-4 block">😕</span>
-          <h2 className="text-xl font-semibold mb-2">Oops!</h2>
+        <div className="text-center bg-card border border-border rounded-2xl p-8">
+          <span className="text-6xl mb-4 block">
+            {errorType === 'auth' ? '🔐' : errorType === 'setup' ? '📝' : errorType === 'materials' ? '📚' : '😕'}
+          </span>
+          <h2 className="text-xl font-semibold mb-2">
+            {errorType === 'auth' ? 'Login Required' : 
+             errorType === 'setup' ? 'Setup Incomplete' : 
+             errorType === 'materials' ? 'No Learning Materials' : 'Oops!'}
+          </h2>
           <p className="text-muted-foreground mb-6">{error}</p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
-          >
-            Back to Dashboard
-          </button>
+          
+          {errorType === 'auth' && (
+            <Link
+              href="/login"
+              className="inline-block px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+            >
+              Log In
+            </Link>
+          )}
+          
+          {errorType === 'setup' && (
+            <Link
+              href="/onboarding"
+              className="inline-block px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+            >
+              Complete Setup
+            </Link>
+          )}
+          
+          {errorType === 'materials' && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Add some vocabulary, phrases, or grammar to your memory to start learning!
+              </p>
+              <Link
+                href="/memory"
+                className="inline-block px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+              >
+                Go to Memory
+              </Link>
+            </div>
+          )}
+          
+          {errorType === 'generic' && (
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+            >
+              Back to Dashboard
+            </button>
+          )}
         </div>
       </div>
     );
