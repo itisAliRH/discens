@@ -1,0 +1,269 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "close": "Close",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "learn": "Learn",
+    "review": "Review",
+    "memory": "Memory",
+    "conversation": "Conversation",
+    "history": "History",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to continue your learning journey",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot password?",
+      "loginButton": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "continueWith": "Or continue with",
+      "google": "Google",
+      "github": "GitHub"
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email to receive a password reset link",
+      "email": "Email",
+      "sendLink": "Send Reset Link",
+      "backToLogin": "Back to login",
+      "success": "Check your email for a password reset link",
+      "error": "Failed to send reset link"
+    },
+    "resetPassword": {
+      "title": "Set New Password",
+      "subtitle": "Enter your new password",
+      "password": "New Password",
+      "confirmPassword": "Confirm Password",
+      "resetButton": "Reset Password",
+      "success": "Password reset successfully",
+      "error": "Failed to reset password",
+      "passwordMismatch": "Passwords don't match"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Track your learning progress",
+    "welcome": "Welcome back, {name}!",
+    "stats": {
+      "streak": "Day Streak",
+      "cardsReviewed": "Cards Reviewed",
+      "accuracy": "Accuracy",
+      "timeSpent": "Time Spent",
+      "minutes": "min"
+    },
+    "actions": {
+      "continueLearning": "Continue Learning",
+      "reviewCards": "Review Cards",
+      "addMemory": "Add Memory",
+      "practice": "Practice"
+    },
+    "recentActivity": {
+      "title": "Recent Activity",
+      "noActivity": "No recent activity"
+    }
+  },
+  "learn": {
+    "title": "Learn",
+    "subtitle": "Expand your knowledge",
+    "generateQuiz": "Generate Quiz",
+    "topic": "Topic",
+    "topicPlaceholder": "Enter a topic to learn",
+    "generating": "Generating quiz...",
+    "question": "Question {current} of {total}",
+    "checkAnswer": "Check Answer",
+    "nextQuestion": "Next Question",
+    "finishQuiz": "Finish Quiz",
+    "correct": "Correct!",
+    "incorrect": "Incorrect",
+    "yourAnswer": "Your answer",
+    "correctAnswer": "Correct answer",
+    "score": "Your Score",
+    "results": {
+      "title": "Quiz Results",
+      "score": "Score: {score}%",
+      "correct": "{correct} correct out of {total}",
+      "tryAgain": "Try Again",
+      "backToLearn": "Back to Learn"
+    }
+  },
+  "review": {
+    "title": "Review",
+    "subtitle": "Reinforce your memory",
+    "cardsToReview": "Cards to review: {count}",
+    "noCards": "No cards to review right now",
+    "comeBackLater": "Come back later for more reviews",
+    "difficulty": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    },
+    "showAnswer": "Show Answer",
+    "cardNumber": "Card {current} of {total}",
+    "completed": {
+      "title": "All Done!",
+      "message": "You've reviewed all your cards for now",
+      "backToDashboard": "Back to Dashboard"
+    }
+  },
+  "memory": {
+    "title": "Memory",
+    "subtitle": "Manage your learning materials",
+    "addMaterial": "Add Material",
+    "import": "Import",
+    "search": "Search materials...",
+    "noMaterials": "No materials yet",
+    "addFirst": "Add your first learning material",
+    "types": {
+      "text": "Text",
+      "url": "URL",
+      "file": "File"
+    },
+    "import": {
+      "title": "Import Material",
+      "type": "Type",
+      "content": "Content",
+      "url": "URL",
+      "file": "File",
+      "uploadFile": "Upload File",
+      "importing": "Importing...",
+      "success": "Material imported successfully",
+      "error": "Failed to import material"
+    }
+  },
+  "conversation": {
+    "title": "Conversation",
+    "subtitle": "Practice your language skills",
+    "startSession": "Start Session",
+    "endSession": "End Session",
+    "typePlaceholder": "Type your message...",
+    "send": "Send",
+    "listening": "Listening...",
+    "speaking": "Speaking...",
+    "noSessions": "No conversation sessions yet",
+    "startFirst": "Start your first conversation"
+  },
+  "history": {
+    "title": "History",
+    "subtitle": "View your learning history",
+    "stats": {
+      "totalSessions": "Total Sessions",
+      "totalTime": "Total Time",
+      "averageScore": "Avg. Score",
+      "cardsLearned": "Cards Learned"
+    },
+    "filter": {
+      "all": "All",
+      "quizzes": "Quizzes",
+      "reviews": "Reviews",
+      "conversations": "Conversations"
+    },
+    "noHistory": "No history yet",
+    "startLearning": "Start learning to build your history"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your account",
+    "edit": "Edit Profile",
+    "photo": "Profile Photo",
+    "changePhoto": "Change Photo",
+    "removePhoto": "Remove Photo",
+    "uploadPhoto": "Upload Photo",
+    "personalInfo": {
+      "title": "Personal Information",
+      "fullName": "Full Name",
+      "email": "Email",
+      "targetLanguage": "Target Language",
+      "nativeLanguage": "Native Language"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "dailyGoal": "Daily Goal (minutes)",
+      "notifications": "Enable Notifications",
+      "theme": "Theme",
+      "uiLanguage": "Interface Language",
+      "themes": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      }
+    },
+    "quiz": {
+      "title": "Quiz Preferences",
+      "types": "Preferred Quiz Types"
+    },
+    "edit": {
+      "title": "Edit Profile",
+      "saving": "Saving...",
+      "success": "Profile updated successfully",
+      "error": "Failed to update profile"
+    }
+  },
+  "onboarding": {
+    "welcome": "Welcome to Discens",
+    "subtitle": "Let's personalize your learning experience",
+    "steps": {
+      "profile": "Profile",
+      "languages": "Languages",
+      "goals": "Goals",
+      "preferences": "Preferences"
+    },
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter your name",
+    "targetLanguage": "What language do you want to learn?",
+    "nativeLanguage": "What's your native language?",
+    "dailyGoal": "Daily learning goal (minutes)",
+    "quizTypes": "Preferred quiz types",
+    "notifications": "Enable notifications",
+    "complete": "Complete Setup",
+    "skip": "Skip"
+  },
+  "gamification": {
+    "badges": {
+      "title": "Badges",
+      "earned": "Earned",
+      "locked": "Locked",
+      "earnedOn": "Earned on {date}"
+    },
+    "streak": {
+      "current": "Current Streak",
+      "longest": "Longest Streak",
+      "days": "{count} days"
+    },
+    "level": {
+      "current": "Level {level}",
+      "nextLevel": "Next Level",
+      "xpToGo": "{xp} XP to go"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "network": "Network error. Please check your connection",
+    "unauthorized": "You need to be logged in",
+    "notFound": "Page not found",
+    "serverError": "Server error. Please try again later"
+  }
+}

@@ -1,108 +1,67 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { LuLanguages, LuCheck } from 'react-icons/lu';
-import { useUntypedSupabase } from '@/lib/supabase/client-untyped';
-import type { LanguageCode } from '@/types/database';
-
-const LANGUAGES = [
-  { code: 'en' as LanguageCode, name: 'English', flag: '🇬🇧' },
-  { code: 'de' as LanguageCode, name: 'Deutsch', flag: '🇩🇪' },
-];
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from 'next/navigation';
+import { locales, localeNames, type Locale } from '@/i18n/config';
+import { LuGlobe } from 'react-icons/lu';
+import { useState, useRef, useEffect } from 'react';
 
 export default function LanguageSelector() {
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>('en');
-  const [isLoading, setIsLoading] = useState(false);
-  const supabase = useUntypedSupabase();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load current UI language from profile
+  // Close dropdown when clicking outside
   useEffect(() => {
-    if (!supabase) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLocaleChange = (newLocale: Locale) => {
+    setIsOpen(false);
     
-    async function loadLanguage() {
-      const { data: { user } } = await supabase!.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase!
-          .from('profiles')
-          .select('ui_language')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile?.ui_language) {
-          setCurrentLanguage(profile.ui_language as LanguageCode);
-        }
-      }
-    }
-    loadLanguage();
-  }, [supabase]);
-
-  const handleLanguageChange = async (language: LanguageCode) => {
-    if (!supabase || language === currentLanguage || isLoading) return;
-
-    setIsLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ ui_language: language })
-          .eq('id', user.id);
-
-        if (!error) {
-          setCurrentLanguage(language);
-          // Reload to apply language changes
-          window.location.reload();
-        }
-      }
-    } catch (error) {
-      console.error('Failed to update language:', error);
-    } finally {
-      setIsLoading(false);
-      setIsOpen(false);
-    }
+    // Get the current pathname without the locale prefix
+    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '');
+    
+    // Navigate to the same path with new locale
+    router.push(`/${newLocale}${pathWithoutLocale || ''}`);
   };
 
-  const currentLang = LANGUAGES.find(l => l.code === currentLanguage) || LANGUAGES[0];
-
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-        aria-label="Select language"
+        aria-label="Change language"
+        title="Change language"
       >
-        <LuLanguages className="w-4 h-4" />
-        <span className="text-sm hidden sm:inline">{currentLang.name}</span>
-        <span className="text-lg sm:hidden">{currentLang.flag}</span>
+        <LuGlobe className="w-4 h-4" />
+        <span className="text-sm font-medium hidden sm:inline">{locale.toUpperCase()}</span>
       </button>
 
       {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
-
-          {/* Dropdown */}
-          <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-            {LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => handleLanguageChange(lang.code)}
-                disabled={isLoading}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors disabled:opacity-50"
-              >
-                <span className="text-2xl">{lang.flag}</span>
-                <span className="flex-1 text-left text-sm">{lang.name}</span>
-                {currentLanguage === lang.code && (
-                  <LuCheck className="w-4 h-4 text-primary" />
-                )}
-              </button>
-            ))}
-          </div>
-        </>
+        <div className="absolute right-0 mt-2 w-40 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+          {locales.map((loc) => (
+            <button
+              key={loc}
+              onClick={() => handleLocaleChange(loc)}
+              className={`w-full px-4 py-2.5 text-left text-sm hover:bg-accent transition-colors flex items-center justify-between ${
+                locale === loc ? 'bg-accent font-medium' : ''
+              }`}
+            >
+              <span>{localeNames[loc]}</span>
+              <span className="text-xs text-muted-foreground">{loc.toUpperCase()}</span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

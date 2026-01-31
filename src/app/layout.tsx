@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
-import { ThemeProvider } from '@/components/ui/ThemeProvider';
+import { locales } from '@/i18n/config';
 
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-sans',
@@ -64,46 +64,14 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Prevent flash of wrong theme */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('discens-theme');
-                  var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  
-                  if (theme === 'dark' || (theme === 'system' && systemDark) || (!theme && systemDark)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
-      </head>
-      <body
-        className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased`}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          themes={['light', 'dark', 'system']}
-        >
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
-  );
+  return children;
 }

@@ -1,0 +1,269 @@
+{
+  "common": {
+    "loading": "Lädt...",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "submit": "Absenden",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "close": "Schließen",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "confirm": "Bestätigen",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "learn": "Lernen",
+    "review": "Wiederholen",
+    "memory": "Gedächtnis",
+    "conversation": "Konversation",
+    "history": "Verlauf",
+    "profile": "Profil",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "auth": {
+    "login": {
+      "title": "Willkommen zurück",
+      "subtitle": "Melden Sie sich an, um Ihre Lernreise fortzusetzen",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "forgotPassword": "Passwort vergessen?",
+      "loginButton": "Anmelden",
+      "noAccount": "Noch kein Konto?",
+      "signUp": "Registrieren",
+      "continueWith": "Oder fortfahren mit",
+      "google": "Google",
+      "github": "GitHub"
+    },
+    "forgotPassword": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Geben Sie Ihre E-Mail ein, um einen Link zum Zurücksetzen zu erhalten",
+      "email": "E-Mail",
+      "sendLink": "Link senden",
+      "backToLogin": "Zurück zur Anmeldung",
+      "success": "Überprüfen Sie Ihre E-Mails für den Link",
+      "error": "Fehler beim Senden des Links"
+    },
+    "resetPassword": {
+      "title": "Neues Passwort festlegen",
+      "subtitle": "Geben Sie Ihr neues Passwort ein",
+      "password": "Neues Passwort",
+      "confirmPassword": "Passwort bestätigen",
+      "resetButton": "Passwort zurücksetzen",
+      "success": "Passwort erfolgreich zurückgesetzt",
+      "error": "Fehler beim Zurücksetzen des Passworts",
+      "passwordMismatch": "Passwörter stimmen nicht überein"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Verfolgen Sie Ihren Lernfortschritt",
+    "welcome": "Willkommen zurück, {name}!",
+    "stats": {
+      "streak": "Tage-Serie",
+      "cardsReviewed": "Karten wiederholt",
+      "accuracy": "Genauigkeit",
+      "timeSpent": "Verbrachte Zeit",
+      "minutes": "Min"
+    },
+    "actions": {
+      "continueLearning": "Weiterlernen",
+      "reviewCards": "Karten wiederholen",
+      "addMemory": "Gedächtnis hinzufügen",
+      "practice": "Üben"
+    },
+    "recentActivity": {
+      "title": "Letzte Aktivität",
+      "noActivity": "Keine kürzliche Aktivität"
+    }
+  },
+  "learn": {
+    "title": "Lernen",
+    "subtitle": "Erweitern Sie Ihr Wissen",
+    "generateQuiz": "Quiz erstellen",
+    "topic": "Thema",
+    "topicPlaceholder": "Geben Sie ein Thema zum Lernen ein",
+    "generating": "Quiz wird erstellt...",
+    "question": "Frage {current} von {total}",
+    "checkAnswer": "Antwort prüfen",
+    "nextQuestion": "Nächste Frage",
+    "finishQuiz": "Quiz beenden",
+    "correct": "Richtig!",
+    "incorrect": "Falsch",
+    "yourAnswer": "Ihre Antwort",
+    "correctAnswer": "Richtige Antwort",
+    "score": "Ihre Punktzahl",
+    "results": {
+      "title": "Quiz-Ergebnisse",
+      "score": "Punktzahl: {score}%",
+      "correct": "{correct} richtig von {total}",
+      "tryAgain": "Nochmal versuchen",
+      "backToLearn": "Zurück zum Lernen"
+    }
+  },
+  "review": {
+    "title": "Wiederholen",
+    "subtitle": "Stärken Sie Ihr Gedächtnis",
+    "cardsToReview": "Zu wiederholende Karten: {count}",
+    "noCards": "Keine Karten zum Wiederholen",
+    "comeBackLater": "Kommen Sie später wieder",
+    "difficulty": {
+      "again": "Nochmal",
+      "hard": "Schwer",
+      "good": "Gut",
+      "easy": "Leicht"
+    },
+    "showAnswer": "Antwort zeigen",
+    "cardNumber": "Karte {current} von {total}",
+    "completed": {
+      "title": "Fertig!",
+      "message": "Sie haben alle Karten für jetzt wiederholt",
+      "backToDashboard": "Zurück zum Dashboard"
+    }
+  },
+  "memory": {
+    "title": "Gedächtnis",
+    "subtitle": "Verwalten Sie Ihre Lernmaterialien",
+    "addMaterial": "Material hinzufügen",
+    "import": "Importieren",
+    "search": "Materialien suchen...",
+    "noMaterials": "Noch keine Materialien",
+    "addFirst": "Fügen Sie Ihr erstes Lernmaterial hinzu",
+    "types": {
+      "text": "Text",
+      "url": "URL",
+      "file": "Datei"
+    },
+    "import": {
+      "title": "Material importieren",
+      "type": "Typ",
+      "content": "Inhalt",
+      "url": "URL",
+      "file": "Datei",
+      "uploadFile": "Datei hochladen",
+      "importing": "Importiert...",
+      "success": "Material erfolgreich importiert",
+      "error": "Fehler beim Importieren"
+    }
+  },
+  "conversation": {
+    "title": "Konversation",
+    "subtitle": "Üben Sie Ihre Sprachfähigkeiten",
+    "startSession": "Sitzung starten",
+    "endSession": "Sitzung beenden",
+    "typePlaceholder": "Geben Sie Ihre Nachricht ein...",
+    "send": "Senden",
+    "listening": "Hört zu...",
+    "speaking": "Spricht...",
+    "noSessions": "Noch keine Konversationssitzungen",
+    "startFirst": "Starten Sie Ihre erste Konversation"
+  },
+  "history": {
+    "title": "Verlauf",
+    "subtitle": "Sehen Sie Ihren Lernverlauf",
+    "stats": {
+      "totalSessions": "Gesamt-Sitzungen",
+      "totalTime": "Gesamtzeit",
+      "averageScore": "Durchschn. Punktzahl",
+      "cardsLearned": "Gelernte Karten"
+    },
+    "filter": {
+      "all": "Alle",
+      "quizzes": "Quizze",
+      "reviews": "Wiederholungen",
+      "conversations": "Konversationen"
+    },
+    "noHistory": "Noch kein Verlauf",
+    "startLearning": "Beginnen Sie zu lernen, um Ihren Verlauf aufzubauen"
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Verwalten Sie Ihr Konto",
+    "edit": "Profil bearbeiten",
+    "photo": "Profilfoto",
+    "changePhoto": "Foto ändern",
+    "removePhoto": "Foto entfernen",
+    "uploadPhoto": "Foto hochladen",
+    "personalInfo": {
+      "title": "Persönliche Informationen",
+      "fullName": "Vollständiger Name",
+      "email": "E-Mail",
+      "targetLanguage": "Zielsprache",
+      "nativeLanguage": "Muttersprache"
+    },
+    "preferences": {
+      "title": "Einstellungen",
+      "dailyGoal": "Tägliches Ziel (Minuten)",
+      "notifications": "Benachrichtigungen aktivieren",
+      "theme": "Design",
+      "uiLanguage": "Sprache der Benutzeroberfläche",
+      "themes": {
+        "light": "Hell",
+        "dark": "Dunkel",
+        "system": "System"
+      }
+    },
+    "quiz": {
+      "title": "Quiz-Einstellungen",
+      "types": "Bevorzugte Quiz-Typen"
+    },
+    "edit": {
+      "title": "Profil bearbeiten",
+      "saving": "Speichert...",
+      "success": "Profil erfolgreich aktualisiert",
+      "error": "Fehler beim Aktualisieren des Profils"
+    }
+  },
+  "onboarding": {
+    "welcome": "Willkommen bei Discens",
+    "subtitle": "Lassen Sie uns Ihre Lernerfahrung personalisieren",
+    "steps": {
+      "profile": "Profil",
+      "languages": "Sprachen",
+      "goals": "Ziele",
+      "preferences": "Einstellungen"
+    },
+    "fullName": "Vollständiger Name",
+    "fullNamePlaceholder": "Geben Sie Ihren Namen ein",
+    "targetLanguage": "Welche Sprache möchten Sie lernen?",
+    "nativeLanguage": "Was ist Ihre Muttersprache?",
+    "dailyGoal": "Tägliches Lernziel (Minuten)",
+    "quizTypes": "Bevorzugte Quiz-Typen",
+    "notifications": "Benachrichtigungen aktivieren",
+    "complete": "Einrichtung abschließen",
+    "skip": "Überspringen"
+  },
+  "gamification": {
+    "badges": {
+      "title": "Abzeichen",
+      "earned": "Verdient",
+      "locked": "Gesperrt",
+      "earnedOn": "Verdient am {date}"
+    },
+    "streak": {
+      "current": "Aktuelle Serie",
+      "longest": "Längste Serie",
+      "days": "{count} Tage"
+    },
+    "level": {
+      "current": "Level {level}",
+      "nextLevel": "Nächstes Level",
+      "xpToGo": "Noch {xp} XP"
+    }
+  },
+  "errors": {
+    "generic": "Etwas ist schiefgelaufen",
+    "network": "Netzwerkfehler. Überprüfen Sie Ihre Verbindung",
+    "unauthorized": "Sie müssen angemeldet sein",
+    "notFound": "Seite nicht gefunden",
+    "serverError": "Serverfehler. Bitte versuchen Sie es später erneut"
+  }
+}

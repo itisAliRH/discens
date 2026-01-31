@@ -1,13 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { ProfileUpdate, QuizType, LanguageCode } from '@/types/database';
+import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 
 export const dynamic = 'force-dynamic';
 
 // Get profile
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const supabase = await createUntypedServerClient();
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -43,7 +44,7 @@ export async function GET() {
 // Update profile
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createUntypedServerClient();
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

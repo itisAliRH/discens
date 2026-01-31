@@ -1,12 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 
 export const dynamic = 'force-dynamic';
 
 // Upload profile photo
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createUntypedServerClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 // Delete profile photo
 export async function DELETE() {
   try {
-    const supabase = await createClient();
+    const supabase = await createUntypedServerClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
