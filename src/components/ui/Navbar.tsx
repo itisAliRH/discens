@@ -9,6 +9,24 @@ import { useEffect, useState } from 'react';
 import { useSupabase } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 
+function NavLink({ href, label }: { href: string; label: string }) {
+  const pathname = usePathname();
+  const isActive = pathname?.includes(href);
+
+  return (
+    <Link
+      href={href}
+      className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+        isActive
+          ? 'text-foreground bg-accent'
+          : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
 export default function Navbar() {
   const t = useTranslations('nav');
   const pathname = usePathname();
@@ -38,17 +56,40 @@ export default function Navbar() {
 
   if (hideNavbar) return null;
 
+  // Check if we're on a main app page (to show navigation)
+  const isMainApp = pathname?.includes('/dashboard') || 
+                    pathname?.includes('/learn') || 
+                    pathname?.includes('/review') || 
+                    pathname?.includes('/conversation') || 
+                    pathname?.includes('/memory') || 
+                    pathname?.includes('/history') ||
+                    pathname?.includes('/profile');
+
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left: Logo and App Name */}
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-              D
-            </div>
-            <span className="font-bold text-xl hidden sm:inline">Discens</span>
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
+                D
+              </div>
+              <span className="font-bold text-xl hidden sm:inline">Discens</span>
+            </Link>
+
+            {/* Desktop Navigation Links (only show when logged in) */}
+            {isLoggedIn && isMainApp && (
+              <div className="hidden md:flex items-center gap-1">
+                <NavLink href="/dashboard" label={t('dashboard')} />
+                <NavLink href="/learn" label={t('learn')} />
+                <NavLink href="/review" label={t('review')} />
+                <NavLink href="/conversation" label="Talk" />
+                <NavLink href="/history" label={t('history')} />
+                <NavLink href="/memory" label={t('memory')} />
+              </div>
+            )}
+          </div>
 
           {/* Right: Theme Toggle, Language Selector, User Menu or Auth Buttons */}
           <div className="flex items-center gap-2">
