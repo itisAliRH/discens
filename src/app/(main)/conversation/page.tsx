@@ -1314,3 +1314,21 @@ function ScoreCard({ label, score }: { label: string; score: number }) {
     </div>
   );
 }
+
+export default function ConversationPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-md mx-auto px-4 py-12">
+        <div className="bg-card border border-border rounded-2xl p-8 text-center">
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Loading...</h2>
+          <p className="text-muted-foreground">
+            Preparing your conversation experience
+          </p>
+        </div>
+      </div>
+    }>
+      <ConversationContent />
+    </Suspense>
+  );
+}
