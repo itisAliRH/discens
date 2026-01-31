@@ -5,7 +5,7 @@
 
 // Navigation icons
 export { 
-  LuHome,
+  LuHouse as LuHome,
   LuBookOpen,
   LuRotateCcw,
   LuMessageCircle,

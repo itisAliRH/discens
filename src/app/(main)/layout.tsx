@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {
-  LuHome,
+  LuHouse,
   LuBookOpen,
   LuRotateCcw,
   LuMessageCircle,
@@ -35,7 +35,7 @@ export default function MainLayout({
 
           {/* Navigation */}
           <nav className="flex items-center gap-1">
-            <NavLink href="/dashboard" icon={<LuHome />} label="Home" />
+            <NavLink href="/dashboard" icon={<LuHouse />} label="Home" />
             <NavLink href="/learn" icon={<LuBookOpen />} label="Learn" />
             <NavLink href="/review" icon={<LuRotateCcw />} label="Review" />
             <NavLink href="/conversation" icon={<LuMessageCircle />} label="Talk" />
@@ -65,7 +65,7 @@ export default function MainLayout({
       {/* Mobile bottom navigation */}
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 backdrop-blur-sm z-50">
         <div className="flex items-center justify-around h-16">
-          <MobileNavLink href="/dashboard" icon={<LuHome />} label="Home" />
+          <MobileNavLink href="/dashboard" icon={<LuHouse />} label="Home" />
           <MobileNavLink href="/learn" icon={<LuBookOpen />} label="Learn" />
           <MobileNavLink href="/conversation" icon={<LuMessageCircle />} label="Talk" />
           <MobileNavLink href="/history" icon={<LuHistory />} label="History" />
