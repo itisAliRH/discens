@@ -477,28 +477,19 @@ ${environmentContext}
     }
 
     if (inputMode === 'elevenlabs') {
-      // Start ElevenLabs conversation with proper overrides
+      // Start ElevenLabs conversation
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
         const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
         
         if (agentId) {
-          // Build scenario-specific prompt and first message
-          const customPrompt = buildElevenLabsPrompt(scenario, environment);
+          // Build first message based on scenario
           const firstMessage = buildFirstMessage(scenario);
           
+          // Start the ElevenLabs session (agent configured in ElevenLabs dashboard)
           await elevenLabsConversation.startSession({
             agentId,
             connectionType: 'websocket',
-            overrides: {
-              agent: {
-                prompt: {
-                  prompt: customPrompt,
-                },
-                firstMessage: firstMessage,
-                language: 'de',
-              },
-            },
           });
           
           // Add the first message to our local state
@@ -573,7 +564,7 @@ ${environmentContext}
         setIsLoading(false);
       }
     }
-  }, [customScenario, inputMode, customEnvironment, elevenLabsConversation, createSession, router, buildElevenLabsPrompt, buildFirstMessage]);
+  }, [customScenario, inputMode, customEnvironment, elevenLabsConversation, createSession, router, buildFirstMessage]);
 
   const startCustomScenario = useCallback(() => {
     if (!customScenario.trim()) return;
@@ -697,6 +688,14 @@ ${environmentContext}
     // Clear session from URL
     router.push('/conversation', { scroll: false });
   }, [inputMode, elevenLabsConversation, clearSavedConversation, router]);
+
+  // Copy session link to clipboard
+  const copySessionLink = useCallback(() => {
+    if (sessionId) {
+      const link = `${window.location.origin}/conversation?session=${sessionId}`;
+      navigator.clipboard.writeText(link);
+    }
+  }, [sessionId]);
 
   // ===== Render: Loading Session =====
 
@@ -957,14 +956,6 @@ ${environmentContext}
       </div>
     );
   }
-
-  // Copy session link to clipboard
-  const copySessionLink = useCallback(() => {
-    if (sessionId) {
-      const link = `${window.location.origin}/conversation?session=${sessionId}`;
-      navigator.clipboard.writeText(link);
-    }
-  }, [sessionId]);
 
   // ===== Render: Feedback View =====
 
