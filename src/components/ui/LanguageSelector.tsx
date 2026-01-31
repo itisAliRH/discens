@@ -29,10 +29,12 @@ export default function LanguageSelector() {
     setIsOpen(false);
     
     // Get the current pathname without the locale prefix
-    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '');
+    // Check if pathname starts with a valid locale (e.g., /en, /de)
+    const localePattern = new RegExp(`^/(${locales.join('|')})(/|$)`);
+    const pathWithoutLocale = pathname.replace(localePattern, '$2');
     
     // Navigate to the same path with new locale
-    router.push(`/${newLocale}${pathWithoutLocale || ''}`);
+    router.push(`/${newLocale}${pathWithoutLocale}`);
   };
 
   return (
