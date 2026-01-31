@@ -134,8 +134,15 @@ export default function OnboardingPage() {
   const handleComplete = async () => {
     if (!targetLanguage) return;
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.tsx:134',message:'handleComplete called',data:{targetLanguage,hasDescription:!!description,categoriesCount:selectedCategories.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
     // Check if user is logged in
     const { data: { user } } = await supabase.auth.getUser();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.tsx:139',message:'User check result',data:{hasUser:!!user,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     if (!user) {
       // Store preferences in localStorage and show login prompt
       localStorage.setItem('onboarding_preferences', JSON.stringify({
@@ -161,18 +168,38 @@ export default function OnboardingPage() {
         })
         .eq('id', user.id);
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.tsx:164',message:'Profile update result',data:{profileError:profileError?.message,hasError:!!profileError},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+
       if (profileError) throw profileError;
+
+      // Check if memory exists before updating
+      const { data: existingMemory, error: fetchError } = await supabase
+        .from('memories')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.tsx:177',message:'Memory fetch result',data:{hasMemory:!!existingMemory,memoryId:existingMemory?.id,fetchError:fetchError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
 
       // Update memory with initial data
       const summary = description || `Starting to learn ${targetLanguage === 'de' ? 'German' : 'English'}`;
-      const { error: memoryError } = await supabase
+      const { error: memoryError, data: memoryResult } = await supabase
         .from('memories')
         .update({
           summary: summary.slice(0, 1000),
           goals: [`Learn ${targetLanguage === 'de' ? 'German' : 'English'}`],
           top_categories: selectedCategories.length > 0 ? selectedCategories : ['daily_life', 'travel'],
         })
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select();
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.tsx:192',message:'Memory update result',data:{memoryError:memoryError?.message,hasError:!!memoryError,rowsAffected:memoryResult?.length||0,updatedMemoryId:memoryResult?.[0]?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
 
       if (memoryError) throw memoryError;
 
@@ -183,6 +210,9 @@ export default function OnboardingPage() {
       router.push('/dashboard');
       router.refresh();
     } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.tsx:207',message:'handleComplete error caught',data:{error:err instanceof Error ? err.message : String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       setError(err instanceof Error ? err.message : 'Failed to complete onboarding');
     } finally {
       setIsLoading(false);

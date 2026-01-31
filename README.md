@@ -1,36 +1,216 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Discens - AI-Powered Language Learning App
+
+A personalized language learning platform powered by AI, built with Next.js, Supabase, and OpenAI.
+
+## Features
+
+- 🧠 **Memory-based Learning**: Personalized vocabulary and grammar storage
+- 🗣️ **AI Conversations**: Practice real-world scenarios with voice or text
+- 📚 **Smart Reviews**: Spaced repetition using FSRS algorithm
+- 🎯 **Adaptive Quizzes**: AI-generated exercises based on your level
+- 🌍 **Multi-language**: Support for English and German
+- 🎨 **Beautiful UI**: Dark/light mode with modern design
+- 🔊 **Voice Support**: ElevenLabs integration for realistic conversations
+- 📊 **Progress Tracking**: Streaks, badges, and XP system
+
+## Tech Stack
+
+- **Framework**: Next.js 16 with App Router
+- **Language**: TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth (Google, Apple, Email)
+- **AI**: OpenAI GPT-4o & GPT-4o-mini
+- **Voice**: ElevenLabs API
+- **Styling**: Tailwind CSS v4
+- **Icons**: React Icons (Lucide)
+- **Spaced Repetition**: ts-fsrs
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20 or higher
+- npm or yarn
+- A Supabase account
+- An OpenAI API key
+- (Optional) ElevenLabs API key for voice features
+
+### Installation
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/yourusername/discens.git
+cd discens
+```
+
+2. **Install dependencies**
+
+```bash
+npm install
+```
+
+3. **Set up environment variables**
+
+Copy `env.example` to `.env.local` and fill in your credentials:
+
+```bash
+cp env.example .env.local
+```
+
+Required environment variables:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key
+
+# ElevenLabs Configuration (Optional)
+ELEVENLABS_API_KEY=your_elevenlabs_api_key
+NEXT_PUBLIC_ELEVENLABS_AGENT_ID=your_elevenlabs_agent_id
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+4. **Set up Supabase**
+
+- Create a new Supabase project
+- Run the migrations in `supabase/migrations/` folder
+- Configure authentication providers (Google, Apple, Email)
+- Add your local URL to redirect URLs: `http://localhost:3000/callback`
+
+5. **Run the development server**
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Deploy to Cloudflare Pages
 
-## Learn More
+See our comprehensive [Cloudflare Deployment Guide](./docs/CLOUDFLARE_DEPLOYMENT.md) for step-by-step instructions on deploying to Cloudflare Pages with GitHub Actions.
 
-To learn more about Next.js, take a look at the following resources:
+### Deploy to Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/discens)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Click the button above or go to [Vercel](https://vercel.com/new)
+2. Import your repository
+3. Add environment variables (same as `.env.local`)
+4. Deploy!
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+discens/
+├── src/
+│   ├── app/                 # Next.js App Router pages
+│   │   ├── (auth)/         # Authentication pages
+│   │   ├── (main)/         # Main app pages (dashboard, learn, etc.)
+│   │   └── api/            # API routes
+│   ├── components/         # React components
+│   │   └── ui/             # UI components
+│   ├── lib/                # Utilities and configurations
+│   │   ├── ai/             # AI providers and logic
+│   │   ├── auth/           # Authentication hooks
+│   │   ├── fsrs/           # Spaced repetition logic
+│   │   └── supabase/       # Supabase client configs
+│   └── types/              # TypeScript types
+├── supabase/
+│   └── migrations/         # Database migrations
+├── public/                 # Static assets
+└── docs/                   # Documentation
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Key Features Explained
+
+### Memory System
+The core of Discens is the "Memory" - a personalized database of words, phrases, and grammar rules that grows as you learn. Each material has:
+- Mastery level (0-5)
+- CEFR level (A1-C2)
+- Categories (travel, work, food, etc.)
+- Examples and synonyms
+- FSRS review scheduling
+
+### AI Conversations
+Practice real-world scenarios with AI characters:
+- Café ordering
+- Doctor appointments
+- Job interviews
+- And more!
+
+Choose voice or text mode, with background ambiance for immersion.
+
+### Smart Reviews
+Uses the FSRS (Free Spaced Repetition Scheduler) algorithm to show you materials at optimal intervals for retention.
+
+### Gamification
+- Daily streaks
+- XP and levels
+- Badges for achievements
+- Gems system (future: marketplace)
+
+## Development
+
+### Run tests
+
+```bash
+npm test
+```
+
+### Lint code
+
+```bash
+npm run lint
+```
+
+### Build for production
+
+```bash
+npm run build
+```
+
+### Generate Supabase types
+
+```bash
+npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes using [Conventional Commits](https://www.conventionalcommits.org/) (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+- 📧 Email: support@discens.app
+- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/discens/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/discens/discussions)
+
+## Acknowledgments
+
+- Built for the Hamburg Cursor Hackathon
+- Powered by OpenAI and ElevenLabs
+- UI inspired by modern language learning apps
+- FSRS algorithm by Jarrett Ye
+
+---
+
+Made with ❤️ by the Discens Team
