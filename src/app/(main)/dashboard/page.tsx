@@ -15,7 +15,7 @@ import {
   LuFileText,
 } from '@/components/ui/icons';
 import { MdOutlineWavingHand } from '@/components/ui/icons';
-import { AnimatedSection, AnimatedStatCard, AnimatedActionCard } from '@/components/ui/DashboardAnimations';
+import { AnimatedSection, AnimatedStatCard } from '@/components/ui/DashboardAnimations';
 
 // Force dynamic rendering - this page requires authentication
 export const dynamic = 'force-dynamic';
@@ -108,42 +108,34 @@ export default async function DashboardPage() {
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Continue Learning</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <AnimatedActionCard href="/learn">
-              <ActionCard
-                href="/learn"
-                icon={<LuBook className="w-7 h-7" />}
-                title="Learn New"
-                description="Discover new words and phrases"
-                color="primary"
-              />
-            </AnimatedActionCard>
-            <AnimatedActionCard href="/review">
-              <ActionCard
-                href="/review"
-                icon={<LuRefreshCw className="w-7 h-7" />}
-                title="Review"
-                description="Practice what you've learned"
-                color="secondary"
-              />
-            </AnimatedActionCard>
-            <AnimatedActionCard href="/conversation">
-              <ActionCard
-                href="/conversation"
-                icon={<LuMessageCircle className="w-7 h-7" />}
-                title="Real Conversation"
-                description="Practice speaking with AI"
-                color="accent"
-              />
-            </AnimatedActionCard>
-            <AnimatedActionCard href="/memory">
-              <ActionCard
-                href="/memory"
-                icon={<LuBrain className="w-7 h-7" />}
-                title="My Memory"
-                description="View and manage your materials"
-                color="muted"
-              />
-            </AnimatedActionCard>
+            <ActionCard
+              href="/learn"
+              icon={<LuBook className="w-7 h-7" />}
+              title="Learn New"
+              description="Discover new words and phrases"
+              color="primary"
+            />
+            <ActionCard
+              href="/review"
+              icon={<LuRefreshCw className="w-7 h-7" />}
+              title="Review"
+              description="Practice what you've learned"
+              color="secondary"
+            />
+            <ActionCard
+              href="/conversation"
+              icon={<LuMessageCircle className="w-7 h-7" />}
+              title="Real Conversation"
+              description="Practice speaking with AI"
+              color="accent"
+            />
+            <ActionCard
+              href="/memory"
+              icon={<LuBrain className="w-7 h-7" />}
+              title="My Memory"
+              description="View and manage your materials"
+              color="muted"
+            />
           </div>
         </section>
       </AnimatedSection>
@@ -235,7 +227,7 @@ function ActionCard({
   return (
     <Link
       href={href}
-      className={`p-6 rounded-xl border border-border bg-card transition-all ${colorClasses[color]} group`}
+      className={`p-6 rounded-xl border border-border bg-card transition-all hover:scale-[1.02] ${colorClasses[color]} group`}
     >
       <span className="text-primary mb-3 block">{icon}</span>
       <h3 className="font-semibold group-hover:text-primary transition-colors">
