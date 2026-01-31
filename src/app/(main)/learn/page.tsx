@@ -4,6 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { MultipleChoiceQuestion, TrueFalseQuestion, FillBlankQuestion, QuizBatch } from '@/lib/ai/quiz';
+import {
+  LuLock,
+  LuFileText,
+  LuBookOpen,
+} from '@/components/ui/icons';
+import { TbMoodConfuzed } from '@/components/ui/icons';
 
 type Question = (MultipleChoiceQuestion & { type: 'multiple_choice' }) 
   | (TrueFalseQuestion & { type: 'true_false' }) 
@@ -163,7 +169,7 @@ export default function LearnPage() {
       
       setFeedbackData({
         isCorrect: result.isCorrect,
-        feedback: result.feedback || (result.isCorrect ? 'Correct! 🎉' : `Not quite. ${question.explanation}`),
+        feedback: result.feedback || (result.isCorrect ? 'Correct!' : `Not quite. ${question.explanation}`),
         score: result.score,
       });
       setShowFeedback(true);
@@ -190,7 +196,7 @@ export default function LearnPage() {
       const isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
       setFeedbackData({
         isCorrect,
-        feedback: isCorrect ? 'Correct! 🎉' : `The correct answer was: ${correctAnswer}`,
+        feedback: isCorrect ? 'Correct!' : `The correct answer was: ${correctAnswer}`,
         score: isCorrect ? 1 : 0,
       });
       setShowFeedback(true);
@@ -239,11 +245,18 @@ export default function LearnPage() {
 
   // Error state with helpful actions
   if (error) {
+    const errorIcon = {
+      auth: <LuLock className="w-14 h-14 text-primary" />,
+      setup: <LuFileText className="w-14 h-14 text-primary" />,
+      materials: <LuBookOpen className="w-14 h-14 text-primary" />,
+      generic: <TbMoodConfuzed className="w-14 h-14 text-muted-foreground" />,
+    }[errorType];
+    
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center bg-card border border-border rounded-2xl p-8">
-          <span className="text-6xl mb-4 block">
-            {errorType === 'auth' ? '🔐' : errorType === 'setup' ? '📝' : errorType === 'materials' ? '📚' : '😕'}
+          <span className="flex justify-center mb-4">
+            {errorIcon}
           </span>
           <h2 className="text-xl font-semibold mb-2">
             {errorType === 'auth' ? 'Login Required' : 

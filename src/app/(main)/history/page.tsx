@@ -2,6 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
+import {
+  LuMessageCircle,
+  LuCoffee,
+  LuBuilding2,
+  LuUtensils,
+  LuStethoscope,
+  LuCar,
+  LuTrain,
+  LuPlane,
+  LuTrees,
+  LuHouse,
+  LuShoppingCart,
+  LuLibrary,
+} from '@/components/ui/icons';
 
 interface ConversationSession {
   id: string;
@@ -129,7 +144,7 @@ export default function HistoryPage() {
 
       {filteredSessions.length === 0 ? (
         <div className="text-center py-12 bg-card border border-border rounded-2xl">
-          <span className="text-5xl mb-4 block">💬</span>
+          <span className="flex justify-center mb-4"><LuMessageCircle className="w-12 h-12 text-muted-foreground" /></span>
           <h2 className="text-xl font-semibold mb-2">No conversations yet</h2>
           <p className="text-muted-foreground mb-6">
             Start practicing with real-world scenarios!
@@ -156,7 +171,7 @@ export default function HistoryPage() {
                       {session.scenario_name}
                     </h3>
                     {session.environment && session.environment !== 'none' && (
-                      <span className="text-lg">
+                      <span className="text-muted-foreground">
                         {getEnvironmentIcon(session.environment)}
                       </span>
                     )}
@@ -237,19 +252,19 @@ export default function HistoryPage() {
   );
 }
 
-function getEnvironmentIcon(environment: string): string {
-  const icons: Record<string, string> = {
-    cafe: '☕',
-    office: '🏢',
-    restaurant: '🍽️',
-    hospital: '🏥',
-    street: '🚗',
-    train_station: '🚂',
-    airport: '✈️',
-    park: '🌳',
-    home: '🏠',
-    supermarket: '🛒',
-    library: '📚',
+function getEnvironmentIcon(environment: string): ReactNode {
+  const icons: Record<string, ReactNode> = {
+    cafe: <LuCoffee className="w-5 h-5" />,
+    office: <LuBuilding2 className="w-5 h-5" />,
+    restaurant: <LuUtensils className="w-5 h-5" />,
+    hospital: <LuStethoscope className="w-5 h-5" />,
+    street: <LuCar className="w-5 h-5" />,
+    train_station: <LuTrain className="w-5 h-5" />,
+    airport: <LuPlane className="w-5 h-5" />,
+    park: <LuTrees className="w-5 h-5" />,
+    home: <LuHouse className="w-5 h-5" />,
+    supermarket: <LuShoppingCart className="w-5 h-5" />,
+    library: <LuLibrary className="w-5 h-5" />,
   };
-  return icons[environment] || '';
+  return icons[environment] || null;
 }

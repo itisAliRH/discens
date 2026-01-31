@@ -3,6 +3,32 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useConversation } from '@elevenlabs/react';
+import type { ReactNode } from 'react';
+import {
+  LuMessageCircle,
+  LuVolumeX,
+  LuCoffee,
+  LuBuilding2,
+  LuUtensils,
+  LuStethoscope,
+  LuCar,
+  LuTrain,
+  LuPlane,
+  LuTrees,
+  LuHouse,
+  LuShoppingCart,
+  LuLibrary,
+  LuKeyboard,
+  LuMic,
+  LuSparkles,
+  LuVolume2,
+  LuTarget,
+  LuPencil,
+  LuClipboard,
+} from '@/components/ui/icons';
+import { FaTheaterMasks } from '@/components/ui/icons';
+import { TbMuscle } from '@/components/ui/icons';
+import { IoEarOutline } from '@/components/ui/icons';
 
 // ===== Types =====
 
@@ -66,25 +92,25 @@ type EnvironmentType =
 interface EnvironmentConfig {
   id: EnvironmentType;
   name: string;
-  icon: string;
+  icon: ReactNode;
   description: string;
   // Using royalty-free ambient sound URLs (placeholders - would need actual hosted files)
   audioUrl?: string;
 }
 
 const ENVIRONMENTS: EnvironmentConfig[] = [
-  { id: 'none', name: 'No Background', icon: '🔇', description: 'Silent background' },
-  { id: 'cafe', name: 'Café', icon: '☕', description: 'Coffee shop chatter, espresso machines', audioUrl: '/audio/ambiance/cafe.mp3' },
-  { id: 'office', name: 'Office', icon: '🏢', description: 'Keyboard typing, printer, quiet murmurs', audioUrl: '/audio/ambiance/office.mp3' },
-  { id: 'restaurant', name: 'Restaurant', icon: '🍽️', description: 'Dishes clinking, conversations, kitchen sounds', audioUrl: '/audio/ambiance/restaurant.mp3' },
-  { id: 'hospital', name: 'Hospital', icon: '🏥', description: 'Quiet hallways, distant announcements', audioUrl: '/audio/ambiance/hospital.mp3' },
-  { id: 'street', name: 'City Street', icon: '🚗', description: 'Traffic, pedestrians, city sounds', audioUrl: '/audio/ambiance/street.mp3' },
-  { id: 'train_station', name: 'Train Station', icon: '🚂', description: 'Announcements, train sounds, crowd', audioUrl: '/audio/ambiance/train.mp3' },
-  { id: 'airport', name: 'Airport', icon: '✈️', description: 'Announcements, crowds, rolling luggage', audioUrl: '/audio/ambiance/airport.mp3' },
-  { id: 'park', name: 'Park', icon: '🌳', description: 'Birds singing, wind, nature sounds', audioUrl: '/audio/ambiance/park.mp3' },
-  { id: 'home', name: 'Home', icon: '🏠', description: 'Quiet indoor ambiance', audioUrl: '/audio/ambiance/home.mp3' },
-  { id: 'supermarket', name: 'Supermarket', icon: '🛒', description: 'Shopping carts, beeping, announcements', audioUrl: '/audio/ambiance/supermarket.mp3' },
-  { id: 'library', name: 'Library', icon: '📚', description: 'Very quiet, page turns, whispers', audioUrl: '/audio/ambiance/library.mp3' },
+  { id: 'none', name: 'No Background', icon: <LuVolumeX className="w-5 h-5" />, description: 'Silent background' },
+  { id: 'cafe', name: 'Café', icon: <LuCoffee className="w-5 h-5" />, description: 'Coffee shop chatter, espresso machines', audioUrl: '/audio/ambiance/cafe.mp3' },
+  { id: 'office', name: 'Office', icon: <LuBuilding2 className="w-5 h-5" />, description: 'Keyboard typing, printer, quiet murmurs', audioUrl: '/audio/ambiance/office.mp3' },
+  { id: 'restaurant', name: 'Restaurant', icon: <LuUtensils className="w-5 h-5" />, description: 'Dishes clinking, conversations, kitchen sounds', audioUrl: '/audio/ambiance/restaurant.mp3' },
+  { id: 'hospital', name: 'Hospital', icon: <LuStethoscope className="w-5 h-5" />, description: 'Quiet hallways, distant announcements', audioUrl: '/audio/ambiance/hospital.mp3' },
+  { id: 'street', name: 'City Street', icon: <LuCar className="w-5 h-5" />, description: 'Traffic, pedestrians, city sounds', audioUrl: '/audio/ambiance/street.mp3' },
+  { id: 'train_station', name: 'Train Station', icon: <LuTrain className="w-5 h-5" />, description: 'Announcements, train sounds, crowd', audioUrl: '/audio/ambiance/train.mp3' },
+  { id: 'airport', name: 'Airport', icon: <LuPlane className="w-5 h-5" />, description: 'Announcements, crowds, rolling luggage', audioUrl: '/audio/ambiance/airport.mp3' },
+  { id: 'park', name: 'Park', icon: <LuTrees className="w-5 h-5" />, description: 'Birds singing, wind, nature sounds', audioUrl: '/audio/ambiance/park.mp3' },
+  { id: 'home', name: 'Home', icon: <LuHouse className="w-5 h-5" />, description: 'Quiet indoor ambiance', audioUrl: '/audio/ambiance/home.mp3' },
+  { id: 'supermarket', name: 'Supermarket', icon: <LuShoppingCart className="w-5 h-5" />, description: 'Shopping carts, beeping, announcements', audioUrl: '/audio/ambiance/supermarket.mp3' },
+  { id: 'library', name: 'Library', icon: <LuLibrary className="w-5 h-5" />, description: 'Very quiet, page turns, whispers', audioUrl: '/audio/ambiance/library.mp3' },
 ];
 
 const STORAGE_KEY = 'discens_conversation_state';
@@ -699,7 +725,7 @@ ${environmentContext}
     return (
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="bg-card border border-border rounded-2xl p-8 text-center">
-          <span className="text-5xl mb-4 block">💬</span>
+          <span className="flex justify-center mb-4"><LuMessageCircle className="w-12 h-12 text-primary" /></span>
           <h2 className="text-2xl font-bold mb-2">Continue Conversation?</h2>
           <p className="text-muted-foreground mb-6">
             You have an unfinished conversation from {timeText}.
@@ -749,23 +775,23 @@ ${environmentContext}
           <span className="text-sm font-medium">Conversation Mode:</span>
           <button
             onClick={() => setInputMode('text')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
               inputMode === 'text'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted hover:bg-muted/80'
             }`}
           >
-            ⌨️ Text
+            <LuKeyboard className="w-4 h-4" /> Text
           </button>
           <button
             onClick={() => setInputMode('elevenlabs')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
               inputMode === 'elevenlabs'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted hover:bg-muted/80'
             }`}
           >
-            🎙️ Voice (ElevenLabs)
+            <LuMic className="w-4 h-4" /> Voice (ElevenLabs)
           </button>
           {inputMode === 'elevenlabs' && (
             <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
@@ -804,7 +830,7 @@ ${environmentContext}
                 }`}
                 title={env.description}
               >
-                <span className="text-2xl block mb-1">{env.icon}</span>
+                <span className="flex justify-center mb-1">{env.icon}</span>
                 <span className="text-xs">{env.name}</span>
               </button>
             ))}
@@ -816,7 +842,7 @@ ${environmentContext}
           onClick={() => setShowCustomDialog(true)}
           className="w-full p-6 mb-6 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-all text-center"
         >
-          <span className="text-3xl mb-2 block">✨</span>
+          <span className="flex justify-center mb-2"><LuSparkles className="w-7 h-7 text-primary" /></span>
           <h3 className="font-semibold text-lg text-primary mb-1">
             Create Custom Scenario
           </h3>
@@ -856,7 +882,7 @@ ${environmentContext}
                       }`}
                       title={env.description}
                     >
-                      <span className="text-xl block">{env.icon}</span>
+                      <span className="flex justify-center">{env.icon}</span>
                       <span className="text-[10px]">{env.name}</span>
                     </button>
                   ))}
@@ -946,7 +972,7 @@ ${environmentContext}
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <span className="text-6xl mb-4 block">🎭</span>
+          <span className="flex justify-center mb-4"><FaTheaterMasks className="w-14 h-14 text-primary" /></span>
           <h1 className="text-2xl font-bold mb-2">Conversation Complete!</h1>
           <p className="text-muted-foreground">{feedback.encouragement}</p>
           
@@ -958,10 +984,10 @@ ${environmentContext}
               </span>
               <button
                 onClick={copySessionLink}
-                className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
                 title="Copy shareable link"
               >
-                📋 Copy Link
+                <LuClipboard className="w-3 h-3" /> Copy Link
               </button>
             </div>
           )}
@@ -984,7 +1010,7 @@ ${environmentContext}
         {feedback.strengths.length > 0 && (
           <div className="mb-6">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <span>💪</span> Strengths
+              <TbMuscle className="w-5 h-5 text-green-500" /> Strengths
             </h3>
             <ul className="space-y-2">
               {feedback.strengths.map((strength, i) => (
@@ -1000,7 +1026,7 @@ ${environmentContext}
         {feedback.improvements.length > 0 && (
           <div className="mb-6">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <span>🎯</span> Areas to Improve
+              <LuTarget className="w-5 h-5 text-orange-500" /> Areas to Improve
             </h3>
             <ul className="space-y-2">
               {feedback.improvements.map((area, i) => (
@@ -1016,7 +1042,7 @@ ${environmentContext}
         {feedback.corrections.length > 0 && (
           <div className="mb-6">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <span>✏️</span> Corrections
+              <LuPencil className="w-5 h-5 text-blue-500" /> Corrections
             </h3>
             <div className="space-y-3">
               {feedback.corrections.map((correction, i) => (
@@ -1077,10 +1103,10 @@ ${environmentContext}
             {sessionId && (
               <button
                 onClick={copySessionLink}
-                className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors font-mono"
+                className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors font-mono flex items-center gap-1"
                 title="Copy session link"
               >
-                {sessionId.slice(0, 8)}... 📋
+                {sessionId.slice(0, 8)}... <LuClipboard className="w-3 h-3" />
               </button>
             )}
           </div>
@@ -1093,15 +1119,15 @@ ${environmentContext}
             className="p-2 rounded-lg bg-muted text-sm"
             title="Change environment"
           >
-            🔊
+            <LuVolume2 className="w-4 h-4" />
           </button>
           {/* Mode indicator */}
-          <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+          <span className={`px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1 ${
             inputMode === 'elevenlabs' 
               ? 'bg-green-500/20 text-green-600' 
               : 'bg-muted text-muted-foreground'
           }`}>
-            {inputMode === 'elevenlabs' ? '🎙️ Voice' : '⌨️ Text'}
+            {inputMode === 'elevenlabs' ? <><LuMic className="w-3 h-3" /> Voice</> : <><LuKeyboard className="w-3 h-3" /> Text</>}
           </span>
           <button
             onClick={changeScenario}
@@ -1149,7 +1175,7 @@ ${environmentContext}
                 }`}
                 title={env.description}
               >
-                <span className="text-lg">{env.icon}</span>
+                <span className="flex justify-center">{env.icon}</span>
               </button>
             ))}
           </div>
@@ -1178,9 +1204,9 @@ ${environmentContext}
                   ? 'bg-green-500 animate-pulse' 
                   : 'bg-muted-foreground'
               }`} />
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium flex items-center gap-1">
                 {elevenLabsConversation.status === 'connected' 
-                  ? (elevenLabsConversation.isSpeaking ? '🔊 AI Speaking...' : '👂 Listening...') 
+                  ? (elevenLabsConversation.isSpeaking ? <><LuVolume2 className="w-4 h-4" /> AI Speaking...</> : <><IoEarOutline className="w-4 h-4" /> Listening...</>) 
                   : 'Connecting...'}
               </span>
             </div>
@@ -1258,9 +1284,9 @@ ${environmentContext}
               ? 'bg-blue-500/20 animate-pulse' 
               : 'bg-green-500/20'
           }`}>
-            <span className="text-3xl">
-              {elevenLabsConversation.isSpeaking ? '🔊' : '🎤'}
-            </span>
+            {elevenLabsConversation.isSpeaking 
+              ? <LuVolume2 className="w-8 h-8 text-blue-500" /> 
+              : <LuMic className="w-8 h-8 text-green-500" />}
           </div>
           <p className="text-sm text-muted-foreground">
             {elevenLabsConversation.isSpeaking 

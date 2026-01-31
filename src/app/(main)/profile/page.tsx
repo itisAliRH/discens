@@ -2,6 +2,18 @@ import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import type { ReactNode } from 'react';
+import {
+  LuUser,
+  LuFlame,
+  LuBookOpen,
+  LuStar,
+  LuGem,
+  LuTrophy,
+  LuCalendar,
+  LuMedal,
+  LuClock,
+} from '@/components/ui/icons';
 
 export const metadata = {
   title: 'Profile',
@@ -57,7 +69,7 @@ export default async function ProfilePage() {
           {profile?.avatar_url ? (
             <Image src={profile.avatar_url} alt="Profile" width={80} height={80} className="w-full h-full object-cover" />
           ) : (
-            '👤'
+            <LuUser className="w-10 h-10 text-primary" />
           )}
         </div>
         <div>
@@ -87,14 +99,14 @@ export default async function ProfilePage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard icon="🔥" value={streak?.current_streak || 0} label="Day Streak" />
-        <StatCard icon="📚" value={memory?.total_materials || 0} label="Materials" />
-        <StatCard icon="⭐" value={memory?.mastered_materials || 0} label="Mastered" />
-        <StatCard icon="💎" value={profile?.gems || 0} label="Gems" />
-        <StatCard icon="🏆" value={streak?.longest_streak || 0} label="Best Streak" />
-        <StatCard icon="📅" value={streak?.total_days_active || 0} label="Days Active" />
-        <StatCard icon="🎖️" value={userBadges.length} label="Badges" />
-        <StatCard icon="⏱️" value={streak?.total_time_minutes || 0} label="Minutes" />
+        <StatCard icon={<LuFlame className="w-5 h-5" />} value={streak?.current_streak || 0} label="Day Streak" />
+        <StatCard icon={<LuBookOpen className="w-5 h-5" />} value={memory?.total_materials || 0} label="Materials" />
+        <StatCard icon={<LuStar className="w-5 h-5" />} value={memory?.mastered_materials || 0} label="Mastered" />
+        <StatCard icon={<LuGem className="w-5 h-5" />} value={profile?.gems || 0} label="Gems" />
+        <StatCard icon={<LuTrophy className="w-5 h-5" />} value={streak?.longest_streak || 0} label="Best Streak" />
+        <StatCard icon={<LuCalendar className="w-5 h-5" />} value={streak?.total_days_active || 0} label="Days Active" />
+        <StatCard icon={<LuMedal className="w-5 h-5" />} value={userBadges.length} label="Badges" />
+        <StatCard icon={<LuClock className="w-5 h-5" />} value={streak?.total_time_minutes || 0} label="Minutes" />
       </div>
 
       {/* Badges */}
@@ -146,11 +158,11 @@ export default async function ProfilePage() {
   );
 }
 
-function StatCard({ icon, value, label }: { icon: string; value: number; label: string }) {
+function StatCard({ icon, value, label }: { icon: ReactNode; value: number; label: string }) {
   return (
     <div className="p-4 rounded-xl bg-card border border-border">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-xl">{icon}</span>
+        <span className="text-primary">{icon}</span>
         <span className="text-2xl font-bold">{value}</span>
       </div>
       <p className="text-sm text-muted-foreground">{label}</p>

@@ -260,7 +260,7 @@ export async function evaluateAnswer(options: EvaluateAnswerOptions): Promise<{
       success: true,
       isCorrect: true,
       score: 1,
-      feedback: 'Correct! 🎉',
+      feedback: 'Correct!',
     };
   }
 
@@ -388,7 +388,7 @@ Return JSON:
   // Default feedback
   return {
     overallScore: Math.round(accuracy),
-    message: accuracy >= 80 ? 'Great job! 🌟' : accuracy >= 50 ? 'Good effort! Keep practicing! 💪' : 'Keep at it! Practice makes perfect! 📚',
+    message: accuracy >= 80 ? 'Great job!' : accuracy >= 50 ? 'Good effort! Keep practicing!' : 'Keep at it! Practice makes perfect!',
     strengths: sessionResult.correct > 0 ? ['Made progress'] : [],
     areasToImprove: sessionResult.incorrect > 0 ? ['Review missed items'] : [],
     recommendations: ['Continue with another session'],

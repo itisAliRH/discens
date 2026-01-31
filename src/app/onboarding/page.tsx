@@ -5,7 +5,26 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import type { LanguageCode, MaterialCategory } from '@/types/database';
 import Link from 'next/link';
-import { LuArrowLeft } from 'react-icons/lu';
+import type { ReactNode } from 'react';
+import {
+  LuArrowLeft,
+  LuPencil,
+  LuFileText,
+  LuSprout,
+  LuChartBar,
+  LuPlane,
+  LuBriefcase,
+  LuShoppingCart,
+  LuStethoscope,
+  LuUtensils,
+  LuHouse,
+  LuBookOpen,
+  LuClapperboard,
+  LuUsers,
+  LuSun,
+  LuLock,
+  LuRocket,
+} from '@/components/ui/icons';
 
 type OnboardingStep = 'language' | 'method' | 'description' | 'quiz' | 'review';
 
@@ -13,7 +32,7 @@ interface MemoryInitMethod {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: ReactNode;
 }
 
 const INIT_METHODS: MemoryInitMethod[] = [
@@ -21,39 +40,39 @@ const INIT_METHODS: MemoryInitMethod[] = [
     id: 'description',
     title: 'Describe Your Level',
     description: 'Tell us about your language skills in your own words',
-    icon: '✍️',
+    icon: <LuPencil className="w-7 h-7" />,
   },
   {
     id: 'quiz',
     title: 'Quick Assessment',
     description: 'Take a short quiz to determine your level',
-    icon: '📝',
+    icon: <LuFileText className="w-7 h-7" />,
   },
   {
     id: 'empty',
     title: 'Start Fresh',
     description: 'Begin with an empty memory and add materials manually',
-    icon: '🌱',
+    icon: <LuSprout className="w-7 h-7" />,
   },
   {
     id: 'cefr',
     title: 'Choose CEFR Level',
     description: 'Select your proficiency level (A1-C2)',
-    icon: '📊',
+    icon: <LuChartBar className="w-7 h-7" />,
   },
 ];
 
-const CATEGORIES: { id: MaterialCategory; name: string; icon: string }[] = [
-  { id: 'travel', name: 'Travel', icon: '✈️' },
-  { id: 'work', name: 'Work', icon: '💼' },
-  { id: 'shopping', name: 'Shopping', icon: '🛒' },
-  { id: 'health', name: 'Health', icon: '🏥' },
-  { id: 'food', name: 'Food & Dining', icon: '🍽️' },
-  { id: 'housing', name: 'Housing', icon: '🏠' },
-  { id: 'education', name: 'Education', icon: '📚' },
-  { id: 'entertainment', name: 'Entertainment', icon: '🎬' },
-  { id: 'social', name: 'Social', icon: '👥' },
-  { id: 'daily_life', name: 'Daily Life', icon: '☀️' },
+const CATEGORIES: { id: MaterialCategory; name: string; icon: ReactNode }[] = [
+  { id: 'travel', name: 'Travel', icon: <LuPlane className="w-5 h-5" /> },
+  { id: 'work', name: 'Work', icon: <LuBriefcase className="w-5 h-5" /> },
+  { id: 'shopping', name: 'Shopping', icon: <LuShoppingCart className="w-5 h-5" /> },
+  { id: 'health', name: 'Health', icon: <LuStethoscope className="w-5 h-5" /> },
+  { id: 'food', name: 'Food & Dining', icon: <LuUtensils className="w-5 h-5" /> },
+  { id: 'housing', name: 'Housing', icon: <LuHouse className="w-5 h-5" /> },
+  { id: 'education', name: 'Education', icon: <LuBookOpen className="w-5 h-5" /> },
+  { id: 'entertainment', name: 'Entertainment', icon: <LuClapperboard className="w-5 h-5" /> },
+  { id: 'social', name: 'Social', icon: <LuUsers className="w-5 h-5" /> },
+  { id: 'daily_life', name: 'Daily Life', icon: <LuSun className="w-5 h-5" /> },
 ];
 
 export default function OnboardingPage() {
@@ -247,7 +266,7 @@ export default function OnboardingPage() {
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full shadow-lg">
             <div className="text-center mb-6">
-              <span className="text-5xl mb-4 block">🔐</span>
+              <span className="flex justify-center mb-4"><LuLock className="w-12 h-12 text-primary" /></span>
               <h2 className="text-2xl font-bold mb-2">Create an Account</h2>
               <p className="text-muted-foreground">
                 Sign up or log in to save your learning preferences and start your journey!
@@ -311,7 +330,7 @@ export default function OnboardingPage() {
                 onClick={() => handleLanguageSelect('de')}
                 className="p-8 rounded-2xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 transition-all text-left group"
               >
-                <span className="text-5xl mb-4 block">🇩🇪</span>
+                <span className="text-4xl font-bold mb-4 block text-primary">DE</span>
                 <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">
                   German
                 </h2>
@@ -324,7 +343,7 @@ export default function OnboardingPage() {
                 onClick={() => handleLanguageSelect('en')}
                 className="p-8 rounded-2xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 transition-all text-left group"
               >
-                <span className="text-5xl mb-4 block">🇬🇧</span>
+                <span className="text-4xl font-bold mb-4 block text-primary">EN</span>
                 <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">
                   English
                 </h2>
@@ -472,9 +491,9 @@ export default function OnboardingPage() {
             <button
               onClick={handleComplete}
               disabled={isLoading}
-              className="w-full px-6 py-4 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="w-full px-6 py-4 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isLoading ? 'Setting up...' : 'Start Learning 🚀'}
+              {isLoading ? 'Setting up...' : <><span>Start Learning</span><LuRocket className="w-5 h-5" /></>}
             </button>
           </div>
         )}

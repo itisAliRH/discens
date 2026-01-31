@@ -2,6 +2,21 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Profile, Memory, Streak } from '@/types/database';
+import type { ReactNode } from 'react';
+import {
+  LuFlame,
+  LuBookOpen,
+  LuStar,
+  LuGem,
+  LuBook,
+  LuRefreshCw,
+  LuMessageCircle,
+  LuBrain,
+  LuFileText,
+  LuTrophy,
+  LuKey,
+} from '@/components/ui/icons';
+import { MdOutlineWavingHand } from '@/components/ui/icons';
 
 export const metadata = {
   title: 'Dashboard',
@@ -34,10 +49,10 @@ export default async function DashboardPage() {
 
   // Generate engagement message based on streak
   const getEngagementMessage = (streakCount: number) => {
-    if (streakCount >= 30) return 'Incredible dedication! You\'re a language master! 🏆';
-    if (streakCount >= 7) return 'Your dedication is paying off! Keep going! 💪';
-    if (streakCount >= 3) return 'Consistency is key. You\'re doing great! 🔑';
-    return 'Ready to expand your vocabulary today? 🌟';
+    if (streakCount >= 30) return 'Incredible dedication! You\'re a language master!';
+    if (streakCount >= 7) return 'Your dedication is paying off! Keep going!';
+    if (streakCount >= 3) return 'Consistency is key. You\'re doing great!';
+    return 'Ready to expand your vocabulary today?';
   };
   const engagementMessage = getEngagementMessage(streak?.current_streak || 0);
 
@@ -45,8 +60,8 @@ export default async function DashboardPage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Welcome Section */}
       <section className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">
-          Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! 👋
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+          Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! <MdOutlineWavingHand className="w-8 h-8 text-primary" />
         </h1>
         <p className="text-muted-foreground">{engagementMessage}</p>
       </section>
@@ -54,23 +69,23 @@ export default async function DashboardPage() {
       {/* Stats Cards */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard
-          icon="🔥"
+          icon={<LuFlame className="w-5 h-5" />}
           value={streak?.current_streak || 0}
           label="Day Streak"
           highlight={streak?.current_streak ? streak.current_streak >= 7 : false}
         />
         <StatCard
-          icon="📚"
+          icon={<LuBookOpen className="w-5 h-5" />}
           value={memory?.total_materials || 0}
           label="Materials"
         />
         <StatCard
-          icon="⭐"
+          icon={<LuStar className="w-5 h-5" />}
           value={memory?.mastered_materials || 0}
           label="Mastered"
         />
         <StatCard
-          icon="💎"
+          icon={<LuGem className="w-5 h-5" />}
           value={profile?.gems || 0}
           label="Gems"
         />
@@ -82,28 +97,28 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ActionCard
             href="/learn"
-            icon="📖"
+            icon={<LuBook className="w-7 h-7" />}
             title="Learn New"
             description="Discover new words and phrases"
             color="primary"
           />
           <ActionCard
             href="/review"
-            icon="🔄"
+            icon={<LuRefreshCw className="w-7 h-7" />}
             title="Review"
             description="Practice what you've learned"
             color="secondary"
           />
           <ActionCard
             href="/conversation"
-            icon="💬"
+            icon={<LuMessageCircle className="w-7 h-7" />}
             title="Real Conversation"
             description="Practice speaking with AI"
             color="accent"
           />
           <ActionCard
             href="/memory"
-            icon="🧠"
+            icon={<LuBrain className="w-7 h-7" />}
             title="My Memory"
             description="View and manage your materials"
             color="muted"
@@ -132,7 +147,7 @@ export default async function DashboardPage() {
       {memory?.summary && (
         <section className="p-6 rounded-xl bg-card border border-border">
           <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
-            <span>📝</span> Your Learning Summary
+            <LuFileText className="w-5 h-5 text-primary" /> Your Learning Summary
           </h2>
           <p className="text-muted-foreground">{memory.summary}</p>
         </section>
@@ -147,7 +162,7 @@ function StatCard({
   label,
   highlight = false,
 }: {
-  icon: string;
+  icon: ReactNode;
   value: number;
   label: string;
   highlight?: boolean;
@@ -161,7 +176,7 @@ function StatCard({
       }`}
     >
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-xl">{icon}</span>
+        <span className={`${highlight ? 'text-primary' : 'text-muted-foreground'}`}>{icon}</span>
         <span className={`text-2xl font-bold ${highlight ? 'text-primary' : ''}`}>
           {value}
         </span>
@@ -179,7 +194,7 @@ function ActionCard({
   color,
 }: {
   href: string;
-  icon: string;
+  icon: ReactNode;
   title: string;
   description: string;
   color: 'primary' | 'secondary' | 'accent' | 'muted';
@@ -196,7 +211,7 @@ function ActionCard({
       href={href}
       className={`p-6 rounded-xl border border-border bg-card transition-all ${colorClasses[color]} group`}
     >
-      <span className="text-3xl mb-3 block">{icon}</span>
+      <span className="text-primary mb-3 block">{icon}</span>
       <h3 className="font-semibold group-hover:text-primary transition-colors">
         {title}
       </h3>

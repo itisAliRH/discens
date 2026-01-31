@@ -3,6 +3,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import type { MaterialType, MaterialCategory, CEFRLevel } from '@/types/database';
+import type { ReactNode } from 'react';
+import {
+  LuBookOpen,
+  LuFileText,
+  LuMessageCircle,
+  LuBook,
+  LuSpeech,
+  LuBrain,
+  LuStar,
+  LuTarget,
+  LuSparkles,
+  LuPencil,
+  LuTrash2,
+  LuMailOpen,
+  LuBadgePlus,
+} from '@/components/ui/icons';
 import ImportMaterialWizard from '@/components/memory/ImportMaterialWizard';
 
 // ===== Types =====
@@ -56,12 +72,12 @@ interface Memory {
 
 // ===== Constants =====
 
-const MATERIAL_TYPES: { value: MaterialType | 'all'; label: string; icon: string }[] = [
-  { value: 'all', label: 'All Types', icon: '📚' },
-  { value: 'word', label: 'Words', icon: '📝' },
-  { value: 'phrase', label: 'Phrases', icon: '💬' },
-  { value: 'grammar', label: 'Grammar', icon: '📖' },
-  { value: 'expression', label: 'Expressions', icon: '🗣️' },
+const MATERIAL_TYPES: { value: MaterialType | 'all'; label: string; icon: ReactNode }[] = [
+  { value: 'all', label: 'All Types', icon: <LuBookOpen className="w-4 h-4" /> },
+  { value: 'word', label: 'Words', icon: <LuFileText className="w-4 h-4" /> },
+  { value: 'phrase', label: 'Phrases', icon: <LuMessageCircle className="w-4 h-4" /> },
+  { value: 'grammar', label: 'Grammar', icon: <LuBook className="w-4 h-4" /> },
+  { value: 'expression', label: 'Expressions', icon: <LuSpeech className="w-4 h-4" /> },
 ];
 
 const CATEGORIES: { value: MaterialCategory | 'all'; label: string }[] = [
@@ -279,7 +295,7 @@ export default function MemoryPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center bg-card border border-border rounded-2xl p-8">
-          <span className="text-6xl mb-4 block">🧠</span>
+          <span className="flex justify-center mb-4"><LuBrain className="w-14 h-14 text-primary" /></span>
           <h2 className="text-xl font-semibold mb-2">Memory Not Found</h2>
           <p className="text-muted-foreground mb-6">{error}</p>
           <Link
@@ -310,7 +326,7 @@ export default function MemoryPage() {
             onClick={() => setShowGenerateDialog(true)}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium flex items-center gap-2"
           >
-            <span>✨</span> Generate with AI
+            <LuSparkles className="w-4 h-4" /> Generate with AI
           </button>
           <button
             onClick={() => setShowImportWizard(true)}
@@ -330,10 +346,10 @@ export default function MemoryPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Total Materials" value={stats.total} icon="📚" />
-          <StatCard label="Mastered" value={stats.mastered} icon="⭐" color="green" />
-          <StatCard label="Learning" value={stats.byMastery.learning} icon="📖" color="blue" />
-          <StatCard label="New" value={stats.byMastery.new} icon="🆕" color="purple" />
+          <StatCard label="Total Materials" value={stats.total} icon={<LuBookOpen className="w-5 h-5" />} />
+          <StatCard label="Mastered" value={stats.mastered} icon={<LuStar className="w-5 h-5" />} color="green" />
+          <StatCard label="Learning" value={stats.byMastery.learning} icon={<LuBook className="w-5 h-5" />} color="blue" />
+          <StatCard label="New" value={stats.byMastery.new} icon={<LuBadgePlus className="w-5 h-5" />} color="purple" />
         </div>
       )}
 
@@ -341,14 +357,14 @@ export default function MemoryPage() {
       {memory && memory.summary && (
         <div className="bg-card border border-border rounded-2xl p-6 mb-8">
           <h3 className="font-semibold mb-2 flex items-center gap-2">
-            <span>🧠</span> Learning Summary
+            <LuBrain className="w-5 h-5 text-primary" /> Learning Summary
           </h3>
           <p className="text-muted-foreground text-sm">{memory.summary}</p>
           {memory.goals && memory.goals.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {memory.goals.map((goal, i) => (
-                <span key={i} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
-                  🎯 {goal}
+                <span key={i} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm flex items-center gap-1">
+                  <LuTarget className="w-3 h-3" /> {goal}
                 </span>
               ))}
             </div>
@@ -392,7 +408,7 @@ export default function MemoryPage() {
       {/* Materials List */}
       {materials.length === 0 ? (
         <div className="text-center py-12 bg-card border border-border rounded-2xl">
-          <span className="text-5xl mb-4 block">📭</span>
+          <span className="flex justify-center mb-4"><LuMailOpen className="w-12 h-12 text-muted-foreground" /></span>
           <h2 className="text-xl font-semibold mb-2">No materials yet</h2>
           <p className="text-muted-foreground mb-6">
             Add your first word, phrase, or grammar rule!
@@ -482,7 +498,7 @@ export default function MemoryPage() {
 function StatCard({ label, value, icon, color }: {
   label: string;
   value: number;
-  icon: string;
+  icon: ReactNode;
   color?: 'green' | 'blue' | 'purple';
 }) {
   const colorClass = {
@@ -590,14 +606,14 @@ function MaterialCard({ material, onEdit, onDelete }: {
             className="p-2 rounded-lg hover:bg-muted transition-colors"
             title="Edit"
           >
-            ✏️
+            <LuPencil className="w-4 h-4" />
           </button>
           <button
             onClick={onDelete}
             className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
             title="Delete"
           >
-            🗑️
+            <LuTrash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -1009,7 +1025,7 @@ function DeleteConfirmDialog({ material, onClose, onConfirm }: {
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-lg text-center">
-        <span className="text-5xl mb-4 block">🗑️</span>
+        <span className="flex justify-center mb-4"><LuTrash2 className="w-12 h-12 text-red-500" /></span>
         <h2 className="text-xl font-bold mb-2">Delete Material?</h2>
         <p className="text-muted-foreground mb-6">
           Are you sure you want to delete &quot;{displayText}&quot;? This action cannot be undone.
@@ -1148,7 +1164,7 @@ function GenerateDialog({ onClose, onGenerate, isGenerating }: {
                 </>
               ) : (
                 <>
-                  ✨ Generate
+                  <LuSparkles className="w-4 h-4" /> Generate
                 </>
               )}
             </button>

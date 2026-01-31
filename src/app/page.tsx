@@ -4,6 +4,17 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
+import {
+  LuGraduationCap,
+  LuBrain,
+  LuRefreshCw,
+  LuMessageCircle,
+  LuTarget,
+  LuChartBar,
+  LuTrophy,
+  LuGlobe,
+} from '@/components/ui/icons';
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -80,8 +91,8 @@ export default function HomePage() {
 
           {/* Hero Content */}
           <div className="text-center">
-            <div className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-              🎓 AI-Powered Language Learning
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <LuGraduationCap className="w-4 h-4" /> AI-Powered Language Learning
             </div>
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
@@ -113,15 +124,15 @@ export default function HomePage() {
           {/* Language badges */}
           <div className="flex justify-center gap-4 mt-16">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
-              <span>🇩🇪</span>
+              <span className="font-bold text-sm">DE</span>
               <span className="font-medium">German</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
-              <span>🇬🇧</span>
+              <span className="font-bold text-sm">EN</span>
               <span className="font-medium">English</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 border border-border text-muted-foreground">
-              <span>🌍</span>
+              <LuGlobe className="w-4 h-4" />
               <span>More coming...</span>
             </div>
           </div>
@@ -142,32 +153,32 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <FeatureCard
-              icon="🧠"
+              icon={<LuBrain className="w-8 h-8" />}
               title="Personal Memory"
               description="Your vocabulary, phrases, and grammar stored in one place. AI generates content based on what YOU need to learn."
             />
             <FeatureCard
-              icon="🔄"
+              icon={<LuRefreshCw className="w-8 h-8" />}
               title="Spaced Repetition"
               description="FSRS algorithm ensures you review at the perfect time. Never forget what you've learned."
             />
             <FeatureCard
-              icon="💬"
+              icon={<LuMessageCircle className="w-8 h-8" />}
               title="Real Conversations"
               description="Practice speaking with AI in realistic scenarios. Get corrections after, not during."
             />
             <FeatureCard
-              icon="🎯"
+              icon={<LuTarget className="w-8 h-8" />}
               title="Smart Quizzes"
               description="Multiple choice, fill-in-blank, true/false—generated specifically from your materials."
             />
             <FeatureCard
-              icon="📊"
+              icon={<LuChartBar className="w-8 h-8" />}
               title="Mistake Analysis"
               description="AI identifies your common errors and creates targeted exercises to fix them."
             />
             <FeatureCard
-              icon="🏆"
+              icon={<LuTrophy className="w-8 h-8" />}
               title="Gamification"
               description="Earn gems, badges, and maintain streaks. Learning should be fun!"
             />
@@ -242,10 +253,10 @@ export default function HomePage() {
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+function FeatureCard({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
     <div className="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors">
-      <span className="text-4xl mb-4 block">{icon}</span>
+      <span className="text-primary mb-4 block">{icon}</span>
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-muted-foreground">{description}</p>
     </div>

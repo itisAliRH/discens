@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  LuLock,
+  LuFileText,
+} from '@/components/ui/icons';
+import { TbMoodConfuzed } from '@/components/ui/icons';
+import { PiConfetti } from '@/components/ui/icons';
 
 interface ReviewCard {
   id: string;
@@ -165,11 +171,17 @@ export default function ReviewPage() {
 
   // Error state with helpful actions
   if (error) {
+    const errorIcon = {
+      auth: <LuLock className="w-14 h-14 text-primary" />,
+      setup: <LuFileText className="w-14 h-14 text-primary" />,
+      generic: <TbMoodConfuzed className="w-14 h-14 text-muted-foreground" />,
+    }[errorType];
+    
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center bg-card border border-border rounded-2xl p-8">
-          <span className="text-6xl mb-4 block">
-            {errorType === 'auth' ? '🔐' : errorType === 'setup' ? '📝' : '😕'}
+          <span className="flex justify-center mb-4">
+            {errorIcon}
           </span>
           <h2 className="text-xl font-semibold mb-2">
             {errorType === 'auth' ? 'Login Required' : 
@@ -213,7 +225,7 @@ export default function ReviewPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center bg-card border border-border rounded-2xl p-8">
-          <span className="text-6xl mb-4 block">🎉</span>
+          <span className="flex justify-center mb-4"><PiConfetti className="w-14 h-14 text-primary" /></span>
           <h2 className="text-2xl font-bold mb-2">All caught up!</h2>
           <p className="text-muted-foreground mb-6">
             No cards due for review right now. Come back later or learn new materials!
