@@ -1,6 +1,31 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsLoggedIn(!!user);
+    }
+    checkAuth();
+  }, [supabase.auth]);
+
+  const handleGetStarted = () => {
+    if (isLoggedIn) {
+      router.push('/dashboard');
+    } else {
+      router.push('/onboarding');
+    }
+  };
+
   return (
     <main className="min-h-dvh">
       {/* Hero Section */}
@@ -11,29 +36,47 @@ export default function HomePage() {
         <div className="absolute bottom-20 -left-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-5xl mx-auto px-4 py-20 md:py-32">
-          {/* Header */}
-          <nav className="flex items-center justify-between mb-16">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-                D
+          {/* Header - Fixed at top */}
+          <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
+            <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
+                  D
+                </div>
+                <span className="font-bold text-xl">Discens</span>
               </div>
-              <span className="font-bold text-xl">Discens</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm font-medium hover:text-primary transition-colors"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/login"
-                className="px-5 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
-              >
-                Get Started
-              </Link>
+              <div className="flex items-center gap-3">
+                {isLoggedIn === null ? (
+                  <div className="w-20 h-8 bg-muted animate-pulse rounded-lg" />
+                ) : isLoggedIn ? (
+                  <Link
+                    href="/dashboard"
+                    className="px-5 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="px-4 py-2 text-sm font-medium hover:text-primary transition-colors"
+                    >
+                      Log in
+                    </Link>
+                    <button
+                      onClick={handleGetStarted}
+                      className="px-5 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
+                    >
+                      Get Started
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </nav>
+
+          {/* Spacer for fixed header */}
+          <div className="h-16" />
 
           {/* Hero Content */}
           <div className="text-center">
@@ -52,12 +95,12 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/login"
+              <button
+                onClick={handleGetStarted}
                 className="px-8 py-4 text-lg font-semibold bg-primary text-primary-foreground rounded-2xl hover:bg-primary/90 transition-all hover:scale-105"
               >
-                Start Learning Free →
-              </Link>
+                {isLoggedIn ? 'Go to Dashboard →' : 'Start Learning Free →'}
+              </button>
               <Link
                 href="#features"
                 className="px-8 py-4 text-lg font-semibold border border-border rounded-2xl hover:bg-accent transition-all"
@@ -170,12 +213,12 @@ export default function HomePage() {
           <p className="text-muted-foreground text-lg mb-8">
             Join Discens today and experience personalized language learning.
           </p>
-          <Link
-            href="/login"
+          <button
+            onClick={handleGetStarted}
             className="inline-block px-10 py-4 text-lg font-semibold bg-primary text-primary-foreground rounded-2xl hover:bg-primary/90 transition-all hover:scale-105"
           >
-            Get Started Free
-          </Link>
+            {isLoggedIn ? 'Go to Dashboard' : 'Get Started Free'}
+          </button>
         </div>
       </section>
 
