@@ -13,6 +13,7 @@ import {
   LuCalendar,
   LuMedal,
   LuClock,
+  LuEdit,
 } from '@/components/ui/icons';
 
 // Force dynamic rendering - this page requires authentication
@@ -67,23 +68,32 @@ export default async function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center gap-6 mb-8">
-        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-3xl overflow-hidden">
-          {profile?.avatar_url ? (
-            <Image src={profile.avatar_url} alt="Profile" width={80} height={80} className="w-full h-full object-cover" />
-          ) : (
-            <LuUser className="w-10 h-10 text-primary" />
-          )}
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold">{profile?.full_name || 'Language Learner'}</h1>
-          <p className="text-muted-foreground">{profile?.email}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm font-medium">Level {level}</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-sm text-muted-foreground">{xp} XP</span>
+      <div className="flex items-start justify-between gap-6 mb-8">
+        <div className="flex items-center gap-6">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-3xl overflow-hidden border-2 border-border shadow-lg">
+            {profile?.avatar_url ? (
+              <Image src={profile.avatar_url} alt="Profile" width={80} height={80} className="w-full h-full object-cover" />
+            ) : (
+              <LuUser className="w-10 h-10 text-primary" />
+            )}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{profile?.full_name || 'Language Learner'}</h1>
+            <p className="text-muted-foreground">{profile?.email}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm font-medium">Level {level}</span>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-sm text-muted-foreground">{xp} XP</span>
+            </div>
           </div>
         </div>
+        <Link
+          href="/profile/edit"
+          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium flex items-center gap-2 hover:bg-primary/90 transition-colors"
+        >
+          <LuEdit className="w-4 h-4" />
+          Edit Profile
+        </Link>
       </div>
 
       {/* XP Progress */}
@@ -148,15 +158,6 @@ export default async function ProfilePage() {
         </div>
       )}
 
-      {/* Settings Link */}
-      <div className="mt-8 text-center">
-        <Link
-          href="/settings"
-          className="text-primary hover:underline text-sm"
-        >
-          Account Settings →
-        </Link>
-      </div>
     </div>
   );
 }

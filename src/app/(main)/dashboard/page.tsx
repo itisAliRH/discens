@@ -13,10 +13,9 @@ import {
   LuMessageCircle,
   LuBrain,
   LuFileText,
-  LuTrophy,
-  LuKey,
 } from '@/components/ui/icons';
 import { MdOutlineWavingHand } from '@/components/ui/icons';
+import { AnimatedSection, AnimatedStatCard, AnimatedActionCard } from '@/components/ui/DashboardAnimations';
 
 // Force dynamic rendering - this page requires authentication
 export const dynamic = 'force-dynamic';
@@ -62,98 +61,122 @@ export default async function DashboardPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Welcome Section */}
-      <section className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-          Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! <MdOutlineWavingHand className="w-8 h-8 text-primary" />
-        </h1>
-        <p className="text-muted-foreground">{engagementMessage}</p>
-      </section>
+      <AnimatedSection>
+        <section className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+            Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! <MdOutlineWavingHand className="w-8 h-8 text-primary" />
+          </h1>
+          <p className="text-muted-foreground">{engagementMessage}</p>
+        </section>
+      </AnimatedSection>
 
       {/* Stats Cards */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          icon={<LuFlame className="w-5 h-5" />}
-          value={streak?.current_streak || 0}
-          label="Day Streak"
-          highlight={streak?.current_streak ? streak.current_streak >= 7 : false}
-        />
-        <StatCard
-          icon={<LuBookOpen className="w-5 h-5" />}
-          value={memory?.total_materials || 0}
-          label="Materials"
-        />
-        <StatCard
-          icon={<LuStar className="w-5 h-5" />}
-          value={memory?.mastered_materials || 0}
-          label="Mastered"
-        />
-        <StatCard
-          icon={<LuGem className="w-5 h-5" />}
-          value={profile?.gems || 0}
-          label="Gems"
-        />
+        <AnimatedStatCard>
+          <StatCard
+            icon={<LuFlame className="w-5 h-5" />}
+            value={streak?.current_streak || 0}
+            label="Day Streak"
+            highlight={streak?.current_streak ? streak.current_streak >= 7 : false}
+          />
+        </AnimatedStatCard>
+        <AnimatedStatCard>
+          <StatCard
+            icon={<LuBookOpen className="w-5 h-5" />}
+            value={memory?.total_materials || 0}
+            label="Materials"
+          />
+        </AnimatedStatCard>
+        <AnimatedStatCard>
+          <StatCard
+            icon={<LuStar className="w-5 h-5" />}
+            value={memory?.mastered_materials || 0}
+            label="Mastered"
+          />
+        </AnimatedStatCard>
+        <AnimatedStatCard>
+          <StatCard
+            icon={<LuGem className="w-5 h-5" />}
+            value={profile?.gems || 0}
+            label="Gems"
+          />
+        </AnimatedStatCard>
       </section>
 
       {/* Quick Actions */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Continue Learning</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ActionCard
-            href="/learn"
-            icon={<LuBook className="w-7 h-7" />}
-            title="Learn New"
-            description="Discover new words and phrases"
-            color="primary"
-          />
-          <ActionCard
-            href="/review"
-            icon={<LuRefreshCw className="w-7 h-7" />}
-            title="Review"
-            description="Practice what you've learned"
-            color="secondary"
-          />
-          <ActionCard
-            href="/conversation"
-            icon={<LuMessageCircle className="w-7 h-7" />}
-            title="Real Conversation"
-            description="Practice speaking with AI"
-            color="accent"
-          />
-          <ActionCard
-            href="/memory"
-            icon={<LuBrain className="w-7 h-7" />}
-            title="My Memory"
-            description="View and manage your materials"
-            color="muted"
-          />
-        </div>
-      </section>
+      <AnimatedSection delay={0.2}>
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Continue Learning</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <AnimatedActionCard href="/learn">
+              <ActionCard
+                href="/learn"
+                icon={<LuBook className="w-7 h-7" />}
+                title="Learn New"
+                description="Discover new words and phrases"
+                color="primary"
+              />
+            </AnimatedActionCard>
+            <AnimatedActionCard href="/review">
+              <ActionCard
+                href="/review"
+                icon={<LuRefreshCw className="w-7 h-7" />}
+                title="Review"
+                description="Practice what you've learned"
+                color="secondary"
+              />
+            </AnimatedActionCard>
+            <AnimatedActionCard href="/conversation">
+              <ActionCard
+                href="/conversation"
+                icon={<LuMessageCircle className="w-7 h-7" />}
+                title="Real Conversation"
+                description="Practice speaking with AI"
+                color="accent"
+              />
+            </AnimatedActionCard>
+            <AnimatedActionCard href="/memory">
+              <ActionCard
+                href="/memory"
+                icon={<LuBrain className="w-7 h-7" />}
+                title="My Memory"
+                description="View and manage your materials"
+                color="muted"
+              />
+            </AnimatedActionCard>
+          </div>
+        </section>
+      </AnimatedSection>
 
       {/* Learning Categories */}
       {memory?.top_categories && memory.top_categories.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Your Focus Areas</h2>
-          <div className="flex flex-wrap gap-2">
-            {memory.top_categories.map((category) => (
-              <span
-                key={category}
-                className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm capitalize"
-              >
-                {category.replace('_', ' ')}
-              </span>
-            ))}
-          </div>
-        </section>
+        <AnimatedSection delay={0.3}>
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Your Focus Areas</h2>
+            <div className="flex flex-wrap gap-2">
+              {memory.top_categories.map((category) => (
+                <span
+                  key={category}
+                  className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm capitalize"
+                >
+                  {category.replace('_', ' ')}
+                </span>
+              ))}
+            </div>
+          </section>
+        </AnimatedSection>
       )}
 
       {/* Learning Summary */}
       {memory?.summary && (
-        <section className="p-6 rounded-xl bg-card border border-border">
-          <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
-            <LuFileText className="w-5 h-5 text-primary" /> Your Learning Summary
-          </h2>
-          <p className="text-muted-foreground">{memory.summary}</p>
-        </section>
+        <AnimatedSection delay={0.4}>
+          <section className="p-6 rounded-xl bg-card border border-border">
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              <LuFileText className="w-5 h-5 text-primary" /> Your Learning Summary
+            </h2>
+            <p className="text-muted-foreground">{memory.summary}</p>
+          </section>
+        </AnimatedSection>
       )}
     </div>
   );

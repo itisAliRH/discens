@@ -282,8 +282,14 @@ export default function MemoryPage() {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your memory...</p>
+          <div className="relative inline-block">
+            <div className="animate-spin w-16 h-16 border-4 border-primary border-t-transparent rounded-full" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <LuBrain className="w-6 h-6 text-primary animate-pulse" />
+            </div>
+          </div>
+          <p className="text-muted-foreground mt-4 text-lg font-medium">Loading your memory...</p>
+          <p className="text-muted-foreground/70 text-sm mt-2">Fetching your learning materials</p>
         </div>
       </div>
     );

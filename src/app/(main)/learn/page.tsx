@@ -236,8 +236,14 @@ export default function LearnPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center">
-          <div className="animate-spin inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full mb-4" />
-          <p className="text-muted-foreground">Preparing your lesson...</p>
+          <div className="relative inline-block">
+            <div className="animate-spin w-16 h-16 border-4 border-primary border-t-transparent rounded-full" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <LuBookOpen className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <p className="text-muted-foreground mt-4 text-lg font-medium">Preparing your lesson...</p>
+          <p className="text-muted-foreground/70 text-sm mt-2">Finding the perfect questions for you</p>
         </div>
       </div>
     );
@@ -320,12 +326,12 @@ export default function LearnPage() {
       {/* Progress bar */}
       <div className="mb-8">
         <div className="flex justify-between text-sm text-muted-foreground mb-2">
-          <span>Question {session.currentIndex + 1} of {session.questions.length}</span>
-          <span>{session.answers.filter(a => a.isCorrect).length} correct</span>
+          <span className="font-medium">Question {session.currentIndex + 1} of {session.questions.length}</span>
+          <span className="text-green-600 dark:text-green-400 font-semibold">{session.answers.filter(a => a.isCorrect).length} correct</span>
         </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className="h-3 bg-muted rounded-full overflow-hidden shadow-inner">
           <div 
-            className="h-full bg-primary transition-all duration-300"
+            className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500 ease-out shadow-sm"
             style={{ width: `${progress}%` }}
           />
         </div>

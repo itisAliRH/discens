@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   LuLock,
   LuFileText,
+  LuRefreshCw,
 } from '@/components/ui/icons';
 import { TbMoodConfuzed } from '@/components/ui/icons';
 import { PiConfetti } from '@/components/ui/icons';
@@ -162,8 +163,14 @@ export default function ReviewPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center">
-          <div className="animate-spin inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full mb-4" />
-          <p className="text-muted-foreground">Finding cards to review...</p>
+          <div className="relative inline-block">
+            <div className="animate-spin w-16 h-16 border-4 border-primary border-t-transparent rounded-full" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <LuRefreshCw className="w-6 h-6 text-primary animate-pulse" />
+            </div>
+          </div>
+          <p className="text-muted-foreground mt-4 text-lg font-medium">Finding cards to review...</p>
+          <p className="text-muted-foreground/70 text-sm mt-2">Loading your review session</p>
         </div>
       </div>
     );
@@ -270,12 +277,12 @@ export default function ReviewPage() {
       {/* Progress */}
       <div className="mb-8">
         <div className="flex justify-between text-sm text-muted-foreground mb-2">
-          <span>Card {session.currentIndex + 1} of {session.cards.length}</span>
-          <span>+{session.results.reduce((s, r) => s + r.xpEarned, 0)} XP</span>
+          <span className="font-medium">Card {session.currentIndex + 1} of {session.cards.length}</span>
+          <span className="text-primary font-semibold">+{session.results.reduce((s, r) => s + r.xpEarned, 0)} XP</span>
         </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className="h-3 bg-muted rounded-full overflow-hidden shadow-inner">
           <div 
-            className="h-full bg-primary transition-all duration-300"
+            className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500 ease-out shadow-sm"
             style={{ width: `${progress}%` }}
           />
         </div>
