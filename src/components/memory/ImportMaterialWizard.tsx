@@ -7,7 +7,7 @@ import type { MaterialType, MaterialCategory, CEFRLevel } from '@/types/database
 // TYPES
 // ============================================
 
-type WizardStep = 'type' | 'import' | 'prefill' | 'edit' | 'validate' | 'complete';
+type WizardStep = 'type' | 'import' | 'prefill' | 'edit' | 'validate' | 'complete' | 'batch-review';
 
 interface ValidationIssue {
   field: string;
@@ -79,6 +79,19 @@ interface TextContent {
 
 type MaterialContent = WordContent | PhraseContent | GrammarContent | ExpressionContent | TextContent;
 
+interface BatchItem {
+  rawContent: string;
+  content: MaterialContent | null;
+  originalContent: MaterialContent | null;
+  categories: MaterialCategory[];
+  cefrLevel: CEFRLevel;
+  difficultyLevel: number;
+  notes: string;
+  prefillConfidence: number;
+  hasUserEdited: boolean;
+  validation: ValidationResult | null;
+}
+
 // ============================================
 // CONSTANTS
 // ============================================
@@ -107,6 +120,7 @@ const CATEGORIES: { value: MaterialCategory; label: string }[] = [
 const CEFR_LEVELS: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
 const MAX_CATEGORIES = 5;
+const MAX_BATCH_ITEMS = 5;
 
 // ============================================
 // COMPONENT
@@ -143,6 +157,11 @@ export default function ImportMaterialWizard({
   const [difficultyLevel, setDifficultyLevel] = useState(1);
   const [notes, setNotes] = useState('');
   
+  // Batch import state
+  const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
+  const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  
   // Loading states
   const [isPrefilling, setIsPrefilling] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
@@ -161,47 +180,199 @@ export default function ImportMaterialWizard({
     setStep('import');
   };
 
+  // Parse raw content into individual items
+  const parseRawContentItems = useCallback((raw: string): string[] => {
+    // Split by newlines, filter empty lines, trim each item
+    const items = raw
+      .split(/\n/)
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+    
+    // Limit to MAX_BATCH_ITEMS
+    return items.slice(0, MAX_BATCH_ITEMS);
+  }, []);
+
+  // Get count of items that would be imported
+  const detectedItemCount = useMemo(() => {
+    return parseRawContentItems(rawContent).length;
+  }, [rawContent, parseRawContentItems]);
+
   const handleImport = async () => {
     if (!materialType || !rawContent.trim()) return;
 
-    setIsPrefilling(true);
-    try {
-      const response = await fetch('/api/memory/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: materialType,
-          rawContent: rawContent.trim(),
-          targetLanguage: 'de',
-          nativeLanguage: 'en',
-        }),
-      });
-
-      const data = await response.json();
+    const items = parseRawContentItems(rawContent);
+    
+    // Check if batch mode (more than 1 item)
+    if (items.length > 1) {
+      setIsBatchMode(true);
+      setIsPrefilling(true);
       
-      if (data.success && data.prefill) {
-        const prefill = data.prefill as PrefillResult;
-        setContent(prefill.content as unknown as MaterialContent);
-        setOriginalContent(JSON.parse(JSON.stringify(prefill.content)) as unknown as MaterialContent);
-        setCategories(prefill.suggestedCategories.slice(0, MAX_CATEGORIES) as MaterialCategory[]);
-        setCefrLevel(prefill.suggestedCefrLevel as CEFRLevel);
-        setDifficultyLevel(prefill.suggestedDifficulty);
-        setPrefillConfidence(prefill.confidence);
+      try {
+        // Process all items in parallel
+        const processedItems = await Promise.all(
+          items.map(async (itemContent): Promise<BatchItem> => {
+            try {
+              const response = await fetch('/api/memory/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: materialType,
+                  rawContent: itemContent,
+                  targetLanguage: 'de',
+                  nativeLanguage: 'en',
+                }),
+              });
+
+              const data = await response.json();
+              
+              if (data.success && data.prefill) {
+                const prefill = data.prefill as PrefillResult;
+                return {
+                  rawContent: itemContent,
+                  content: prefill.content as unknown as MaterialContent,
+                  originalContent: JSON.parse(JSON.stringify(prefill.content)) as unknown as MaterialContent,
+                  categories: prefill.suggestedCategories.slice(0, MAX_CATEGORIES) as MaterialCategory[],
+                  cefrLevel: prefill.suggestedCefrLevel as CEFRLevel,
+                  difficultyLevel: prefill.suggestedDifficulty,
+                  notes: '',
+                  prefillConfidence: prefill.confidence,
+                  hasUserEdited: false,
+                  validation: null,
+                };
+              }
+            } catch (error) {
+              console.error('Prefill error for item:', itemContent, error);
+            }
+            
+            // Fallback for failed items
+            return {
+              rawContent: itemContent,
+              content: getEmptyContent(materialType),
+              originalContent: null,
+              categories: [],
+              cefrLevel: 'A1',
+              difficultyLevel: 1,
+              notes: '',
+              prefillConfidence: 0,
+              hasUserEdited: false,
+              validation: null,
+            };
+          })
+        );
+        
+        setBatchItems(processedItems);
+        setCurrentBatchIndex(0);
+        
+        // Load first item into main form
+        loadBatchItemToForm(processedItems[0]);
         setStep('edit');
-      } else {
-        // Initialize empty content structure
-        setContent(getEmptyContent(materialType));
-        setOriginalContent(null);
-        setStep('edit');
+      } catch (error) {
+        console.error('Batch import error:', error);
+      } finally {
+        setIsPrefilling(false);
       }
-    } catch (error) {
-      console.error('Prefill error:', error);
-      setContent(getEmptyContent(materialType));
-      setStep('edit');
-    } finally {
-      setIsPrefilling(false);
+    } else {
+      // Single item mode (existing behavior)
+      setIsBatchMode(false);
+      setIsPrefilling(true);
+      
+      try {
+        const response = await fetch('/api/memory/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: materialType,
+            rawContent: rawContent.trim(),
+            targetLanguage: 'de',
+            nativeLanguage: 'en',
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (data.success && data.prefill) {
+          const prefill = data.prefill as PrefillResult;
+          setContent(prefill.content as unknown as MaterialContent);
+          setOriginalContent(JSON.parse(JSON.stringify(prefill.content)) as unknown as MaterialContent);
+          setCategories(prefill.suggestedCategories.slice(0, MAX_CATEGORIES) as MaterialCategory[]);
+          setCefrLevel(prefill.suggestedCefrLevel as CEFRLevel);
+          setDifficultyLevel(prefill.suggestedDifficulty);
+          setPrefillConfidence(prefill.confidence);
+          setStep('edit');
+        } else {
+          // Initialize empty content structure
+          setContent(getEmptyContent(materialType));
+          setOriginalContent(null);
+          setStep('edit');
+        }
+      } catch (error) {
+        console.error('Prefill error:', error);
+        setContent(getEmptyContent(materialType));
+        setStep('edit');
+      } finally {
+        setIsPrefilling(false);
+      }
     }
   };
+
+  // Load a batch item into the main form state
+  const loadBatchItemToForm = useCallback((item: BatchItem) => {
+    setContent(item.content);
+    setOriginalContent(item.originalContent);
+    setCategories(item.categories);
+    setCefrLevel(item.cefrLevel);
+    setDifficultyLevel(item.difficultyLevel);
+    setNotes(item.notes);
+    setPrefillConfidence(item.prefillConfidence);
+    setHasUserEdited(item.hasUserEdited);
+    setValidation(item.validation);
+  }, []);
+
+  // Save current form state back to batch item
+  const saveBatchItemFromForm = useCallback(() => {
+    if (!isBatchMode) return;
+    
+    setBatchItems(prev => {
+      const updated = [...prev];
+      updated[currentBatchIndex] = {
+        ...updated[currentBatchIndex],
+        content,
+        categories,
+        cefrLevel,
+        difficultyLevel,
+        notes,
+        hasUserEdited,
+        validation,
+      };
+      return updated;
+    });
+  }, [isBatchMode, currentBatchIndex, content, categories, cefrLevel, difficultyLevel, notes, hasUserEdited, validation]);
+
+  // Navigate to next batch item
+  const handleNextBatchItem = useCallback(() => {
+    if (!isBatchMode) return;
+    
+    // Save current item first
+    saveBatchItemFromForm();
+    
+    if (currentBatchIndex < batchItems.length - 1) {
+      const nextIndex = currentBatchIndex + 1;
+      setCurrentBatchIndex(nextIndex);
+      loadBatchItemToForm(batchItems[nextIndex]);
+    }
+  }, [isBatchMode, currentBatchIndex, batchItems, saveBatchItemFromForm, loadBatchItemToForm]);
+
+  // Navigate to previous batch item
+  const handlePrevBatchItem = useCallback(() => {
+    if (!isBatchMode || currentBatchIndex <= 0) return;
+    
+    // Save current item first
+    saveBatchItemFromForm();
+    
+    const prevIndex = currentBatchIndex - 1;
+    setCurrentBatchIndex(prevIndex);
+    loadBatchItemToForm(batchItems[prevIndex]);
+  }, [isBatchMode, currentBatchIndex, batchItems, saveBatchItemFromForm, loadBatchItemToForm]);
 
   const handleValidate = async () => {
     if (!materialType || !content) return;
@@ -250,14 +421,46 @@ export default function ImportMaterialWizard({
   const handleSave = async () => {
     if (!materialType || !content) return;
 
-    await onSave({
-      type: materialType,
-      content: content as unknown as Record<string, unknown>,
-      categories,
-      cefr_level: cefrLevel,
-      difficulty_level: difficultyLevel,
-      notes: notes || undefined,
-    });
+    if (isBatchMode) {
+      // Save current item first
+      saveBatchItemFromForm();
+      
+      // Get updated batch items with current form state
+      const finalBatchItems = [...batchItems];
+      finalBatchItems[currentBatchIndex] = {
+        ...finalBatchItems[currentBatchIndex],
+        content,
+        categories,
+        cefrLevel,
+        difficultyLevel,
+        notes,
+        hasUserEdited,
+        validation,
+      };
+      
+      // Save all batch items
+      for (const item of finalBatchItems) {
+        if (item.content && item.categories.length > 0) {
+          await onSave({
+            type: materialType,
+            content: item.content as unknown as Record<string, unknown>,
+            categories: item.categories,
+            cefr_level: item.cefrLevel,
+            difficulty_level: item.difficultyLevel,
+            notes: item.notes || undefined,
+          });
+        }
+      }
+    } else {
+      await onSave({
+        type: materialType,
+        content: content as unknown as Record<string, unknown>,
+        categories,
+        cefr_level: cefrLevel,
+        difficulty_level: difficultyLevel,
+        notes: notes || undefined,
+      });
+    }
   };
 
   // Track if user has made edits
@@ -286,33 +489,65 @@ export default function ImportMaterialWizard({
     
     const currentIndex = steps.findIndex(s => s.key === step || 
       (step === 'prefill' && s.key === 'import') ||
-      (step === 'complete' && s.key === 'validate')
+      (step === 'complete' && s.key === 'validate') ||
+      (step === 'batch-review' && s.key === 'validate')
     );
 
     return (
-      <div className="flex items-center justify-center gap-2 mb-6">
-        {steps.map((s, i) => (
-          <div key={s.key} className="flex items-center">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                i < currentIndex
-                  ? 'bg-green-500 text-white'
-                  : i === currentIndex
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}
-            >
-              {i < currentIndex ? '✓' : i + 1}
-            </div>
-            {i < steps.length - 1 && (
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center justify-center gap-2">
+          {steps.map((s, i) => (
+            <div key={s.key} className="flex items-center">
               <div
-                className={`w-8 h-0.5 mx-1 ${
-                  i < currentIndex ? 'bg-green-500' : 'bg-muted'
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  i < currentIndex
+                    ? 'bg-green-500 text-white'
+                    : i === currentIndex
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
                 }`}
-              />
-            )}
+              >
+                {i < currentIndex ? '✓' : i + 1}
+              </div>
+              {i < steps.length - 1 && (
+                <div
+                  className={`w-8 h-0.5 mx-1 ${
+                    i < currentIndex ? 'bg-green-500' : 'bg-muted'
+                  }`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {/* Batch progress indicator */}
+        {isBatchMode && step === 'edit' && batchItems.length > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-sm text-muted-foreground">Item</span>
+            <div className="flex gap-1">
+              {batchItems.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    saveBatchItemFromForm();
+                    setCurrentBatchIndex(i);
+                    loadBatchItemToForm(batchItems[i]);
+                  }}
+                  className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${
+                    i === currentBatchIndex
+                      ? 'bg-primary text-primary-foreground'
+                      : batchItems[i].categories.length > 0
+                      ? 'bg-green-500/20 text-green-600 border border-green-500/30'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <span className="text-sm text-muted-foreground">of {batchItems.length}</span>
           </div>
-        ))}
+        )}
       </div>
     );
   };
@@ -342,69 +577,127 @@ export default function ImportMaterialWizard({
     </div>
   );
 
-  const renderImportStep = () => (
-    <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold">
-          Import {materialType && MATERIAL_TYPES.find(t => t.value === materialType)?.label}
-        </h3>
-        <p className="text-muted-foreground text-sm">
-          Paste the content and our AI will structure it for you
-        </p>
-      </div>
+  const renderImportStep = () => {
+    const totalLines = rawContent.split(/\n/).filter(l => l.trim().length > 0).length;
+    const exceedsLimit = totalLines > MAX_BATCH_ITEMS;
+    
+    return (
+      <div className="space-y-4">
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-semibold">
+            Import {materialType && MATERIAL_TYPES.find(t => t.value === materialType)?.label}
+          </h3>
+          <p className="text-muted-foreground text-sm">
+            Paste the content and our AI will structure it for you
+          </p>
+        </div>
 
-      <textarea
-        value={rawContent}
-        onChange={(e) => setRawContent(e.target.value)}
-        placeholder={getPlaceholder(materialType)}
-        className="w-full h-48 px-4 py-3 rounded-xl border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-      />
+        <textarea
+          value={rawContent}
+          onChange={(e) => setRawContent(e.target.value)}
+          placeholder={getBatchPlaceholder(materialType)}
+          className="w-full h-48 px-4 py-3 rounded-xl border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+        />
 
-      <div className="bg-muted/50 rounded-lg p-4 text-sm">
-        <div className="font-medium mb-1">💡 Tips</div>
-        <ul className="text-muted-foreground space-y-1 list-disc list-inside">
-          {getTips(materialType).map((tip, i) => (
-            <li key={i}>{tip}</li>
-          ))}
-        </ul>
-      </div>
+        {/* Item count indicator */}
+        {detectedItemCount > 0 && (
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+            exceedsLimit 
+              ? 'bg-yellow-500/10 border border-yellow-500/30' 
+              : detectedItemCount > 1 
+              ? 'bg-blue-500/10 border border-blue-500/30'
+              : 'bg-muted'
+          }`}>
+            <span className={`text-lg ${exceedsLimit ? '⚠️' : detectedItemCount > 1 ? '📦' : '📝'}`}>
+              {exceedsLimit ? '⚠️' : detectedItemCount > 1 ? '📦' : '📝'}
+            </span>
+            <div className="flex-1">
+              <span className="font-medium">
+                {detectedItemCount === 1 
+                  ? '1 item detected' 
+                  : `${Math.min(detectedItemCount, MAX_BATCH_ITEMS)} items detected`}
+              </span>
+              {exceedsLimit && (
+                <span className="text-yellow-600 text-sm ml-2">
+                  (max {MAX_BATCH_ITEMS}, {totalLines - MAX_BATCH_ITEMS} will be skipped)
+                </span>
+              )}
+              {detectedItemCount > 1 && !exceedsLimit && (
+                <span className="text-muted-foreground text-sm ml-2">
+                  — you&apos;ll review each one
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
-      <div className="flex gap-3">
-        <button
-          onClick={() => setStep('type')}
-          className="flex-1 py-3 rounded-xl border border-border hover:bg-accent"
-        >
-          Back
-        </button>
-        <button
-          onClick={handleImport}
-          disabled={!rawContent.trim() || isPrefilling}
-          className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {isPrefilling ? (
-            <>
-              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <span>✨</span> Process with AI
-            </>
-          )}
-        </button>
+        <div className="bg-muted/50 rounded-lg p-4 text-sm">
+          <div className="font-medium mb-1">💡 Tips</div>
+          <ul className="text-muted-foreground space-y-1 list-disc list-inside">
+            <li>Add multiple items by putting each on a <strong>new line</strong> (max {MAX_BATCH_ITEMS})</li>
+            {getTips(materialType).map((tip, i) => (
+              <li key={i}>{tip}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setStep('type')}
+            className="flex-1 py-3 rounded-xl border border-border hover:bg-accent"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleImport}
+            disabled={!rawContent.trim() || isPrefilling}
+            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isPrefilling ? (
+              <>
+                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                Processing{detectedItemCount > 1 ? ` ${detectedItemCount} items...` : '...'}
+              </>
+            ) : (
+              <>
+                <span>✨</span> Process {detectedItemCount > 1 ? `${Math.min(detectedItemCount, MAX_BATCH_ITEMS)} items` : 'with AI'}
+              </>
+            )}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderEditStep = () => {
     if (!materialType || !content) return null;
 
+    const isLastItem = !isBatchMode || currentBatchIndex === batchItems.length - 1;
+    const isFirstItem = !isBatchMode || currentBatchIndex === 0;
+    
+    // Count completed batch items (those with categories)
+    const completedBatchCount = isBatchMode 
+      ? batchItems.filter((item, i) => 
+          i === currentBatchIndex 
+            ? categories.length > 0 
+            : item.categories.length > 0
+        ).length
+      : 0;
+
     return (
       <div className="space-y-4">
         <div className="text-center mb-4">
-          <h3 className="text-lg font-semibold">Review & Edit</h3>
+          <h3 className="text-lg font-semibold">
+            {isBatchMode 
+              ? `Review & Edit (${currentBatchIndex + 1}/${batchItems.length})`
+              : 'Review & Edit'
+            }
+          </h3>
           <p className="text-muted-foreground text-sm">
-            AI has prefilled the fields. Make any necessary changes.
+            {isBatchMode 
+              ? `Editing: "${batchItems[currentBatchIndex]?.rawContent?.slice(0, 40)}${(batchItems[currentBatchIndex]?.rawContent?.length ?? 0) > 40 ? '...' : ''}"`
+              : 'AI has prefilled the fields. Make any necessary changes.'
+            }
           </p>
           {prefillConfidence > 0 && (
             <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-sm">
@@ -417,7 +710,7 @@ export default function ImportMaterialWizard({
         </div>
 
         {/* Dynamic content editor based on type */}
-        <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+        <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
           {renderContentEditor()}
         </div>
 
@@ -492,41 +785,105 @@ export default function ImportMaterialWizard({
         </div>
 
         {/* User edit indicator */}
-        {hasUserEdited && (
+        {hasUserEdited && !isBatchMode && (
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm">
             <span className="text-yellow-600">⚠️</span>{' '}
             You&apos;ve made changes. We&apos;ll validate your edits before saving.
           </div>
         )}
 
-        <div className="flex gap-3 pt-2">
-          <button
-            onClick={() => setStep('import')}
-            className="flex-1 py-3 rounded-xl border border-border hover:bg-accent"
-          >
-            Back
-          </button>
-          <button
-            onClick={hasUserEdited ? handleValidate : handleSave}
-            disabled={isValidating || isSaving || categories.length === 0}
-            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isValidating ? (
-              <>
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                Validating...
-              </>
-            ) : hasUserEdited ? (
-              <>
-                <span>🔍</span> Validate & Save
-              </>
-            ) : (
-              <>
-                <span>💾</span> Save Material
-              </>
+        {/* Batch mode buttons */}
+        {isBatchMode ? (
+          <div className="space-y-3 pt-2">
+            {/* Batch progress summary */}
+            <div className="bg-muted/50 rounded-lg p-3 text-sm text-center">
+              <span className="font-medium">{completedBatchCount}</span> of{' '}
+              <span className="font-medium">{batchItems.length}</span> items ready to save
+            </div>
+            
+            <div className="flex gap-3">
+              {/* Back / Previous button */}
+              <button
+                onClick={isFirstItem ? () => setStep('import') : handlePrevBatchItem}
+                className="flex-1 py-3 rounded-xl border border-border hover:bg-accent flex items-center justify-center gap-2"
+              >
+                {isFirstItem ? 'Back' : (
+                  <>
+                    <span>←</span> Previous
+                  </>
+                )}
+              </button>
+              
+              {/* Next / Save All button */}
+              {isLastItem ? (
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving || completedBatchCount === 0}
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                      Saving {completedBatchCount} items...
+                    </>
+                  ) : (
+                    <>
+                      <span>💾</span> Save All ({completedBatchCount})
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleNextBatchItem}
+                  disabled={categories.length === 0}
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  Next <span>→</span>
+                </button>
+              )}
+            </div>
+            
+            {/* Skip to save option */}
+            {!isLastItem && completedBatchCount > 0 && (
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="w-full py-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                Skip remaining and save {completedBatchCount} item{completedBatchCount !== 1 ? 's' : ''}
+              </button>
             )}
-          </button>
-        </div>
+          </div>
+        ) : (
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setStep('import')}
+              className="flex-1 py-3 rounded-xl border border-border hover:bg-accent"
+            >
+              Back
+            </button>
+            <button
+              onClick={hasUserEdited ? handleValidate : handleSave}
+              disabled={isValidating || isSaving || categories.length === 0}
+              className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isValidating ? (
+                <>
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  Validating...
+                </>
+              ) : hasUserEdited ? (
+                <>
+                  <span>🔍</span> Validate & Save
+                </>
+              ) : (
+                <>
+                  <span>💾</span> Save Material
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -1149,6 +1506,38 @@ function getPlaceholder(type: MaterialType | null): string {
       return 'Paste a German text for reading practice...';
     default:
       return 'Enter content to import...';
+  }
+}
+
+function getBatchPlaceholder(type: MaterialType | null): string {
+  switch (type) {
+    case 'word':
+      return `Enter German words (one per line, max 5)
+
+Example:
+der Hund - the dog
+die Katze - the cat
+das Buch - the book`;
+    case 'phrase':
+      return `Enter German phrases (one per line, max 5)
+
+Example:
+Wie geht es Ihnen?
+Guten Morgen!
+Auf Wiedersehen!`;
+    case 'grammar':
+      return 'Describe the grammar rule (e.g., "In German, the verb always goes in second position in main clauses...")';
+    case 'expression':
+      return `Enter idioms or expressions (one per line, max 5)
+
+Example:
+Da steppt der Bär
+Das ist mir Wurst
+Ich verstehe nur Bahnhof`;
+    case 'text':
+      return 'Paste a German text for reading practice...';
+    default:
+      return 'Enter content to import (one item per line)...';
   }
 }
 
