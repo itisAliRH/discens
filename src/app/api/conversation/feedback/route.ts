@@ -1,11 +1,7 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { getOpenAIClient } from '@/lib/ai/providers';
 import { z } from 'zod';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const FeedbackSchema = z.object({
   overallScore: z.number().min(0).max(100),
@@ -53,6 +49,7 @@ export async function POST(request: Request) {
     const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
 
     // Generate feedback
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [

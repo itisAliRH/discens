@@ -1,11 +1,6 @@
-import OpenAI from 'openai';
 import { z } from 'zod';
 import type { QuizType } from '@/types/database';
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOpenAIClient } from './providers';
 
 // ============================================
 // QUIZ SCHEMAS
@@ -159,6 +154,8 @@ Return JSON:
   }]
 }`;
 
+  const openai = getOpenAIClient();
+
   try {
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -267,6 +264,7 @@ export async function evaluateAnswer(options: EvaluateAnswerOptions): Promise<{
   // For fill-in-the-blank and free text, use AI for fuzzy matching
   if (questionType === 'fill_blank' || questionType === 'free_text') {
     try {
+      const openai = getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{
@@ -350,6 +348,7 @@ export async function generateSessionFeedback(
   const baseXP = sessionResult.correct * (isReview ? 5 : 10);
 
   try {
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{

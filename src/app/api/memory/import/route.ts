@@ -1,12 +1,8 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { getOpenAIClient } from '@/lib/ai/providers';
 import { z } from 'zod';
 import type { MaterialType, MaterialCategory, CEFRLevel } from '@/types/database';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 // ============================================
 // SCHEMAS
@@ -217,6 +213,7 @@ Return JSON with this structure:
 }`;
 
   try {
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -310,6 +307,7 @@ Return JSON:
 - "suggestion" = Optional improvement`;
 
   try {
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [

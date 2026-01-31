@@ -1,11 +1,6 @@
-import OpenAI from 'openai';
 import { z } from 'zod';
 import type { MaterialCategory, CEFRLevel } from '@/types/database';
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOpenAIClient } from './providers';
 
 // ============================================
 // SCHEMAS FOR STRUCTURED OUTPUTS
@@ -119,6 +114,8 @@ Return as JSON with structure:
   "grammar": [{ rule, explanation, examples[{correct, incorrect?}], level, category, difficultyLevel }]
 }`;
 
+  const openai = getOpenAIClient();
+
   try {
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -227,6 +224,7 @@ Return JSON:
 }`;
 
   try {
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
@@ -295,6 +293,7 @@ Return JSON:
 }`;
 
   try {
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
@@ -369,6 +368,7 @@ Return JSON:
 }`;
 
   try {
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],

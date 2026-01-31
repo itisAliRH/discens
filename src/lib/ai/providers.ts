@@ -3,10 +3,20 @@ import OpenAI from 'openai';
 /**
  * OpenAI Client Configuration
  * Used for: GPT-4o (conversations), GPT-4o-mini (structured outputs)
+ *
+ * Lazy initialization to avoid requiring OPENAI_API_KEY during build time.
+ * This is important for Cloudflare Pages builds where secrets are only available at runtime.
  */
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let _openai: OpenAI | null = null;
+
+export function getOpenAIClient(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return _openai;
+}
 
 /**
  * Model Configuration Constants

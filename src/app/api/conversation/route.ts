@@ -1,10 +1,6 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOpenAIClient } from '@/lib/ai/providers';
 
 // Conversation scenarios
 const SCENARIOS = {
@@ -115,6 +111,7 @@ ${vocabulary.length > 0 ? `Helpful vocabulary: ${vocabulary.join(', ')}` : ''}
 ${isStart ? `Start the conversation naturally in the described situation. Greet the user and set the scene.` : ''}`;
 
     // Generate response
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
