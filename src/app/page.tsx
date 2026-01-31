@@ -1,5 +1,9 @@
 'use client';
 
+// Force dynamic rendering to prevent build-time prerendering
+// This page requires Supabase client which needs runtime env vars
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
