@@ -35,6 +35,9 @@ export {
   LuRefreshCw,
   LuDownload,
   LuUpload,
+  LuPencil,
+  LuKeyboard,
+  LuClipboard,
 } from 'react-icons/lu';
 
 // Status icons
@@ -60,6 +63,14 @@ export {
   LuFlame,
   LuZap,
   LuSparkles,
+  LuRocket,
+  LuGem,
+  LuMedal,
+  LuSprout,
+  LuKey,
+  LuLock,
+  LuChartBar,
+  LuBadgePlus,
 } from 'react-icons/lu';
 
 // Content icons
@@ -69,6 +80,8 @@ export {
   LuMessageSquare,
   LuQuote,
   LuList,
+  LuSpeech,
+  LuMailOpen,
 } from 'react-icons/lu';
 
 // Location/Environment icons
@@ -78,17 +91,21 @@ export {
   LuShoppingCart,
   LuStethoscope,
   LuUtensils,
-  LuHome as LuHouse,
+  LuHouse,
   LuSchool,
   LuMusic,
   LuUsers,
   LuMapPin,
-  LuTrain,
   LuPlane,
-  LuTrees,
   LuStore,
-  LuLibrary,
+  LuBuilding2,
+  LuCar,
+  LuClapperboard,
 } from 'react-icons/lu';
+
+// Train and Trees icons from other sources  
+export { MdOutlineTrain as LuTrain } from 'react-icons/md';
+export { PiTree as LuTrees, PiBooks as LuLibrary } from 'react-icons/pi';
 
 // Misc icons
 export {
@@ -108,8 +125,10 @@ export {
   LuBell,
   LuMoon,
   LuSun,
+  LuMonitor,
   LuGlobe,
   LuLanguages,
+  LuArrowLeft,
 } from 'react-icons/lu';
 
 // Emoji replacements (for specific use cases)
@@ -122,6 +141,7 @@ export {
 
 export {
   MdOutlineWavingHand,
+  MdCelebration,
 } from 'react-icons/md';
 
 export {
@@ -129,4 +149,27 @@ export {
   TbMoodHappy,
   TbMoodSad,
   TbMoodConfuzed,
+  TbMasks,
 } from 'react-icons/tb';
+
+// Muscle/Strength icon (using Zap as a strength indicator)
+export { LuZap as TbMuscle } from 'react-icons/lu';
+
+// Additional icons from other sets
+export {
+  BiParty,
+  BiDumbbell,
+} from 'react-icons/bi';
+
+export {
+  FaTheaterMasks,
+} from 'react-icons/fa';
+
+export {
+  IoEarOutline,
+} from 'react-icons/io5';
+
+export {
+  PiConfetti,
+  PiGraduationCap,
+} from 'react-icons/pi';
