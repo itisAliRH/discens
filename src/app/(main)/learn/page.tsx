@@ -38,6 +38,9 @@ export default function LearnPage() {
   // Fetch and start quiz
   useEffect(() => {
     async function loadQuiz() {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'Starting quiz load',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       try {
         const response = await fetch('/api/quiz/generate', {
           method: 'POST',
@@ -49,11 +52,22 @@ export default function LearnPage() {
           }),
         });
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'API response received',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+
         if (!response.ok) {
+          const errorText = await response.text();
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'API error response',data:{errorText},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
           throw new Error('Failed to load quiz');
         }
 
         const data = await response.json();
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'Quiz data received',data:{hasQuestions:!!data.questions,materialCount:data.materialCount},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         const questions = flattenQuestions(data.questions);
 
         if (questions.length === 0) {
@@ -74,6 +88,9 @@ export default function LearnPage() {
         });
         setIsLoading(false);
       } catch (err) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'learn/page.tsx:loadQuiz',message:'Quiz load error',data:{error:err instanceof Error ? err.message : String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         setError(err instanceof Error ? err.message : 'Failed to load quiz');
         setIsLoading(false);
       }

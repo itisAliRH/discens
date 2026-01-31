@@ -50,14 +50,28 @@ export default function ReviewPage() {
   // Fetch due cards
   useEffect(() => {
     async function loadCards() {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'Starting cards load',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       try {
         const response = await fetch('/api/review/cards');
         
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'API response received',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+
         if (!response.ok) {
+          const errorText = await response.text();
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'API error response',data:{errorText},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
           throw new Error('Failed to load review cards');
         }
 
         const data = await response.json();
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'Cards data received',data:{cardsCount:data.cards?.length || 0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         
         if (data.cards.length === 0) {
           setIsLoading(false);
@@ -72,6 +86,9 @@ export default function ReviewPage() {
         });
         setIsLoading(false);
       } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review/page.tsx:loadCards',message:'Cards load error',data:{error:error instanceof Error ? error.message : String(error)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         console.error('Load cards error:', error);
         setIsLoading(false);
       }
