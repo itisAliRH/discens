@@ -2,8 +2,9 @@
 
 import { createUntypedClient } from '@/lib/supabase/client-untyped';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { LanguageCode, MaterialCategory } from '@/types/database';
+import Link from 'next/link';
 
 type OnboardingStep = 'language' | 'method' | 'description' | 'quiz' | 'review';
 
@@ -65,6 +66,30 @@ export default function OnboardingPage() {
   const [selectedCategories, setSelectedCategories] = useState<MaterialCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  // Check auth status on mount
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsLoggedIn(!!user);
+      
+      // If logged in and has completed onboarding, redirect to dashboard
+      if (user) {
+        const { data: memory } = await supabase
+          .from('memories')
+          .select('summary')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (memory && memory.summary && memory.summary !== '') {
+          router.replace('/dashboard');
+        }
+      }
+    }
+    checkAuth();
+  }, [supabase, router]);
 
   const handleLanguageSelect = (lang: LanguageCode) => {
     setTargetLanguage(lang);
@@ -108,16 +133,24 @@ export default function OnboardingPage() {
   const handleComplete = async () => {
     if (!targetLanguage) return;
     
+    // Check if user is logged in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      // Store preferences in localStorage and show login prompt
+      localStorage.setItem('onboarding_preferences', JSON.stringify({
+        targetLanguage,
+        description,
+        selectedCategories,
+        selectedMethod,
+      }));
+      setShowLoginPrompt(true);
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
 
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Not authenticated');
-      }
-
       // Update profile with target language
       const { error: profileError } = await supabase
         .from('profiles')
@@ -142,6 +175,9 @@ export default function OnboardingPage() {
 
       if (memoryError) throw memoryError;
 
+      // Clear stored preferences
+      localStorage.removeItem('onboarding_preferences');
+
       // Navigate to dashboard
       router.push('/dashboard');
       router.refresh();
@@ -152,8 +188,66 @@ export default function OnboardingPage() {
     }
   };
 
+  // Load preferences from localStorage on mount (for users returning after login)
+  const [shouldAutoComplete, setShouldAutoComplete] = useState(false);
+  
+  useEffect(() => {
+    const stored = localStorage.getItem('onboarding_preferences');
+    if (stored && isLoggedIn) {
+      try {
+        const prefs = JSON.parse(stored);
+        if (prefs.targetLanguage) setTargetLanguage(prefs.targetLanguage);
+        if (prefs.description) setDescription(prefs.description);
+        if (prefs.selectedCategories) setSelectedCategories(prefs.selectedCategories);
+        if (prefs.selectedMethod) setSelectedMethod(prefs.selectedMethod);
+        setStep('review');
+        setShouldAutoComplete(true);
+      } catch {
+        localStorage.removeItem('onboarding_preferences');
+      }
+    }
+  }, [isLoggedIn]);
+
+  // Auto-complete when preferences are loaded
+  useEffect(() => {
+    if (shouldAutoComplete && targetLanguage && isLoggedIn) {
+      handleComplete();
+      setShouldAutoComplete(false);
+    }
+  }, [shouldAutoComplete, targetLanguage, isLoggedIn]);
+
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center p-4">
+      {/* Login Prompt Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full shadow-lg">
+            <div className="text-center mb-6">
+              <span className="text-5xl mb-4 block">🔐</span>
+              <h2 className="text-2xl font-bold mb-2">Create an Account</h2>
+              <p className="text-muted-foreground">
+                Sign up or log in to save your learning preferences and start your journey!
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <Link
+                href="/login"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Sign Up / Log In
+              </Link>
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="w-full px-4 py-3 rounded-xl border border-border text-muted-foreground hover:bg-accent transition-colors"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-2xl">
         {/* Progress indicator */}
         <div className="flex items-center justify-center gap-2 mb-8">
