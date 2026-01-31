@@ -4,6 +4,8 @@ import { getOpenAIClient } from '@/lib/ai/providers';
 import { z } from 'zod';
 import type { MaterialType, MaterialCategory, CEFRLevel } from '@/types/database';
 
+export const runtime = 'edge';
+
 // ============================================
 // SCHEMAS
 // ============================================

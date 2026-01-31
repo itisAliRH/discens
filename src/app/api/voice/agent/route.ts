@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 
+export const runtime = 'edge';
+
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/agents/create';
 

@@ -3,6 +3,8 @@ import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
 import type { LanguageCode, MaterialCategory } from '@/types/database';
 
+export const runtime = 'edge';
+
 // Lazy-init admin client to avoid build-time env var access
 function getSupabaseAdmin() {
   return createClient(

@@ -2,6 +2,8 @@ import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
 import type { MaterialType, MaterialCategory, CEFRLevel } from '@/types/database';
 
+export const runtime = 'edge';
+
 /**
  * GET /api/memory/materials
  * Get user's materials with optional filtering

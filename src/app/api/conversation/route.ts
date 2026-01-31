@@ -2,6 +2,8 @@ import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
 import { getOpenAIClient } from '@/lib/ai/providers';
 
+export const runtime = 'edge';
+
 // Conversation scenarios
 const SCENARIOS = {
   cafe: {

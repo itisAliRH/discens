@@ -1,6 +1,8 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 /**
  * GET /api/gamification/badges
  * Get user's badges and available badges

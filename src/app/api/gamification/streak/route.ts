@@ -1,6 +1,8 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 /**
  * POST /api/gamification/streak
  * Update user's streak on activity

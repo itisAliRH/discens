@@ -2,6 +2,8 @@ import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { evaluateAnswer } from '@/lib/ai/quiz';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 export async function POST(request: Request) {
   try {
     const supabase = await createUntypedServerClient();

@@ -1,6 +1,8 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 /**
  * GET /api/conversation/sessions/[id]
  * Get a specific conversation session

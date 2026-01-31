@@ -17,6 +17,7 @@ import {
 
 // Force dynamic rendering - this page requires authentication
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export const metadata = {
   title: 'Profile',

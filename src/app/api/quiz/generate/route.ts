@@ -3,6 +3,8 @@ import { generateQuiz } from '@/lib/ai/quiz';
 import { NextResponse } from 'next/server';
 import type { QuizType } from '@/types/database';
 
+export const runtime = 'edge';
+
 // Material type for quiz generation (different from database Material)
 interface QuizMaterial {
   id: string;

@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { getOpenAIClient } from '@/lib/ai/providers';
 import { z } from 'zod';
 
+export const runtime = 'edge';
+
 const FeedbackSchema = z.object({
   overallScore: z.number().min(0).max(100),
   fluencyScore: z.number().min(0).max(100),

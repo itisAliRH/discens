@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { Memory } from '@/types/database';
 
+export const runtime = 'edge';
+
 /**
  * OAuth Callback Route
  * Handles the callback from OAuth providers (Google, Apple)

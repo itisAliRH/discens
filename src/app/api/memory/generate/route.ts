@@ -3,6 +3,8 @@ import { generateMaterials } from '@/lib/ai/memory';
 import { NextResponse } from 'next/server';
 import type { MaterialCategory, CEFRLevel } from '@/types/database';
 
+export const runtime = 'edge';
+
 /**
  * POST /api/memory/generate
  * Generate new materials using AI

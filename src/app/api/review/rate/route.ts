@@ -9,6 +9,8 @@ import {
 } from '@/lib/fsrs/review';
 import type { ReviewCard } from '@/types/database';
 
+export const runtime = 'edge';
+
 /**
  * POST /api/review/rate
  * Rate a review card and update the schedule
