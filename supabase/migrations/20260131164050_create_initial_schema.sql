@@ -481,34 +481,46 @@ CREATE TRIGGER update_friendships_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- Function to handle new user signup
-CREATE OR REPLACE FUNCTION handle_new_user()
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Create profile
-  INSERT INTO profiles (id, email, full_name, avatar_url)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'),
-    NEW.raw_user_meta_data->>'avatar_url'
-  );
+  -- Create profile with explicit schema
+  BEGIN
+    INSERT INTO public.profiles (id, email, full_name, avatar_url)
+    VALUES (
+      NEW.id,
+      NEW.email,
+      COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'),
+      NEW.raw_user_meta_data->>'avatar_url'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    RAISE EXCEPTION 'Profile creation failed: %', SQLERRM;
+  END;
   
-  -- Create memory container
-  INSERT INTO memories (user_id)
-  VALUES (NEW.id);
+  -- Create memory container with explicit schema
+  BEGIN
+    INSERT INTO public.memories (user_id)
+    VALUES (NEW.id);
+  EXCEPTION WHEN OTHERS THEN
+    RAISE EXCEPTION 'Memory creation failed: %', SQLERRM;
+  END;
   
-  -- Create streak record
-  INSERT INTO streaks (user_id)
-  VALUES (NEW.id);
+  -- Create streak record with explicit schema
+  BEGIN
+    INSERT INTO public.streaks (user_id)
+    VALUES (NEW.id);
+  EXCEPTION WHEN OTHERS THEN
+    RAISE EXCEPTION 'Streak creation failed: %', SQLERRM;
+  END;
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger for new user signup
+-- Trigger for new user signup with explicit schema
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Function to update memory statistics
 CREATE OR REPLACE FUNCTION update_memory_stats()
