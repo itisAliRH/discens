@@ -1,6 +1,7 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const metadata = {
   title: 'Profile',
@@ -52,9 +53,9 @@ export default async function ProfilePage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center gap-6 mb-8">
-        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-3xl">
+        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-3xl overflow-hidden">
           {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+            <Image src={profile.avatar_url} alt="Profile" width={80} height={80} className="w-full h-full object-cover" />
           ) : (
             '👤'
           )}
