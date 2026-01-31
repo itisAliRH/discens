@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useConversation } from '@elevenlabs/react';
 import type { ReactNode } from 'react';
@@ -115,7 +115,7 @@ const ENVIRONMENTS: EnvironmentConfig[] = [
 
 const STORAGE_KEY = 'discens_conversation_state';
 
-export default function ConversationPage() {
+function ConversationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [view, setView] = useState<ViewState>('select');

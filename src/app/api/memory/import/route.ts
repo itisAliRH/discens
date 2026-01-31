@@ -21,7 +21,7 @@ const PrefillRequestSchema = z.object({
 
 const ValidateRequestSchema = z.object({
   type: z.enum(['word', 'phrase', 'grammar', 'expression', 'text']),
-  content: z.record(z.unknown()),
+  content: z.record(z.string(), z.unknown()),
   categories: z.array(z.string()).min(1).max(5),
   cefrLevel: z.string(),
   targetLanguage: z.enum(['en', 'de']).optional().default('de'),
@@ -103,7 +103,7 @@ const ValidationResultSchema = z.object({
     message: z.string(),
     suggestedValue: z.unknown().optional(),
   })),
-  corrections: z.record(z.unknown()).optional(),
+  corrections: z.record(z.string(), z.unknown()).optional(),
   overallAssessment: z.string(),
 });
 

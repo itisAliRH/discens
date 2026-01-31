@@ -118,7 +118,7 @@ export async function POST(request: Request) {
     // Get memory
     const { data: memory } = await supabase
       .from('memories')
-      .select('id')
+      .select('id, total_materials')
       .eq('user_id', user.id)
       .single();
 

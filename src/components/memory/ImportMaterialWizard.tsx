@@ -181,8 +181,8 @@ export default function ImportMaterialWizard({
       
       if (data.success && data.prefill) {
         const prefill = data.prefill as PrefillResult;
-        setContent(prefill.content as MaterialContent);
-        setOriginalContent(JSON.parse(JSON.stringify(prefill.content)) as MaterialContent);
+        setContent(prefill.content as unknown as MaterialContent);
+        setOriginalContent(JSON.parse(JSON.stringify(prefill.content)) as unknown as MaterialContent);
         setCategories(prefill.suggestedCategories.slice(0, MAX_CATEGORIES) as MaterialCategory[]);
         setCefrLevel(prefill.suggestedCefrLevel as CEFRLevel);
         setDifficultyLevel(prefill.suggestedDifficulty);
@@ -252,7 +252,7 @@ export default function ImportMaterialWizard({
 
     await onSave({
       type: materialType,
-      content: content as Record<string, unknown>,
+      content: content as unknown as Record<string, unknown>,
       categories,
       cefr_level: cefrLevel,
       difficulty_level: difficultyLevel,
@@ -562,7 +562,7 @@ export default function ImportMaterialWizard({
                 <li key={i} className="text-sm">
                   <span className="font-medium">{issue.field}:</span>{' '}
                   {issue.message}
-                  {issue.suggestedValue && (
+                  {issue.suggestedValue !== undefined && (
                     <span className="block text-green-600 mt-1">
                       💡 Suggested: {String(issue.suggestedValue)}
                     </span>

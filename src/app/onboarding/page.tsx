@@ -172,40 +172,22 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      // Update profile with target language
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          target_language: targetLanguage,
-          native_language: targetLanguage === 'de' ? 'en' : 'en',
-        })
-        .eq('id', user.id);
+      // Use server-side API to complete onboarding (bypasses RLS)
+      const response = await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetLanguage,
+          description,
+          selectedCategories,
+        }),
+      });
 
+      const result = await response.json();
 
-      if (profileError) throw profileError;
-
-      // Check if memory exists before updating
-      const { data: existingMemory, error: fetchError } = await supabase
-        .from('memories')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-
-      // Update memory with initial data
-      const summary = description || `Starting to learn ${targetLanguage === 'de' ? 'German' : 'English'}`;
-      const { error: memoryError, data: memoryResult } = await supabase
-        .from('memories')
-        .update({
-          summary: summary.slice(0, 1000),
-          goals: [`Learn ${targetLanguage === 'de' ? 'German' : 'English'}`],
-          top_categories: selectedCategories.length > 0 ? selectedCategories : ['daily_life', 'travel'],
-        })
-        .eq('user_id', user.id)
-        .select();
-
-
-      if (memoryError) throw memoryError;
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to complete onboarding');
+      }
 
       // Clear stored preferences
       localStorage.removeItem('onboarding_preferences');

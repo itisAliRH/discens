@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, Suspense, useEffect } from 'react';
+import type { Memory } from '@/types/database';
 
 function LoginForm() {
   const router = useRouter();
@@ -27,13 +28,13 @@ function LoginForm() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         // Check if user needs onboarding
-        const { data: memory } = await supabase
+        const { data: memoryData } = await supabase
           .from('memories')
           .select('summary')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .maybeSingle() as { data: Pick<Memory, 'summary'> | null };
 
-        if (memory && memory.summary === '') {
+        if (memoryData && memoryData.summary === '') {
           router.replace('/onboarding');
         } else {
           router.replace('/dashboard');

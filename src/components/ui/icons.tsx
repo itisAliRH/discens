@@ -19,7 +19,7 @@ export {
 // Action icons
 export {
   LuPlus,
-  LuEdit,
+  LuPencil as LuEdit,
   LuTrash2,
   LuCheck,
   LuX,
@@ -42,9 +42,9 @@ export {
 
 // Status icons
 export {
-  LuCheckCircle,
-  LuXCircle,
-  LuAlertCircle,
+  LuCircleCheck as LuCheckCircle,
+  LuCircleX as LuXCircle,
+  LuCircleAlert as LuAlertCircle,
   LuInfo,
   LuLoader,
   LuTrendingUp,
@@ -114,7 +114,7 @@ export {
   LuSearch,
   LuFilter,
   LuMenu,
-  LuMoreVertical,
+  LuEllipsisVertical as LuMoreVertical,
   LuChevronRight,
   LuChevronLeft,
   LuChevronDown,
@@ -149,7 +149,7 @@ export {
   TbMoodHappy,
   TbMoodSad,
   TbMoodConfuzed,
-  TbMasks,
+  TbMasksTheater as TbMasks,
 } from 'react-icons/tb';
 
 // Muscle/Strength icon (using Zap as a strength indicator)
