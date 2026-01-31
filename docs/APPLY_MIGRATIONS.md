@@ -1,5 +1,17 @@
 # Apply Database Migrations to Supabase
 
+## ⚠️ IMPORTANT: Known Issue Fixed
+
+**The trigger in the original migration had a bug.** If you applied migrations before commit `e661979`, you need to run the fix:
+
+1. Go to Supabase Dashboard → SQL Editor
+2. Run the contents of `docs/FIX_TRIGGER_WITH_LOGGING.sql`
+3. This fixes the `handle_new_user()` trigger to use explicit schema qualifications
+
+The bug caused "Database error saving new user" during signup because the trigger couldn't find tables in the `public` schema when executing from the `auth` schema.
+
+---
+
 ## Quick Steps:
 
 ### Option 1: Using Supabase Dashboard (Easiest)
