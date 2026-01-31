@@ -28,6 +28,7 @@ export default function MainLayout({
             <NavLink href="/learn" icon="📚" label="Learn" />
             <NavLink href="/review" icon="🔄" label="Review" />
             <NavLink href="/conversation" icon="💬" label="Talk" />
+            <NavLink href="/history" icon="📜" label="History" />
             <NavLink href="/memory" icon="🧠" label="Memory" />
           </nav>
 
@@ -51,9 +52,9 @@ export default function MainLayout({
         <div className="flex items-center justify-around h-16">
           <MobileNavLink href="/dashboard" icon="🏠" label="Home" />
           <MobileNavLink href="/learn" icon="📚" label="Learn" />
-          <MobileNavLink href="/review" icon="🔄" label="Review" />
           <MobileNavLink href="/conversation" icon="💬" label="Talk" />
-          <MobileNavLink href="/memory" icon="🧠" label="Memory" />
+          <MobileNavLink href="/history" icon="📜" label="History" />
+          <MobileNavLink href="/profile" icon="👤" label="Profile" />
         </div>
       </nav>
 
