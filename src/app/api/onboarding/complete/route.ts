@@ -3,12 +3,14 @@ import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
 import type { LanguageCode, MaterialCategory } from '@/types/database';
 
-// Create admin client that bypasses RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-);
+// Lazy-init admin client to avoid build-time env var access
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
 
 interface CompleteOnboardingRequest {
   targetLanguage: LanguageCode;
@@ -38,6 +40,9 @@ export async function POST(request: Request) {
     }
 
     console.log('[API] Completing onboarding for user:', user.id);
+
+    // Get admin client (lazy-init to avoid build-time env var access)
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Check if profile exists using admin client
     const { data: existingProfile } = await supabaseAdmin
