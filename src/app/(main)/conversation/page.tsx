@@ -1,13 +1,17 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useConversation } from '@elevenlabs/react';
+
+// ===== Types =====
 
 interface Scenario {
   id: string;
   name: string;
   description: string;
   vocabulary: string[];
+  defaultEnvironment?: EnvironmentType;
 }
 
 interface Message {
@@ -32,10 +36,62 @@ interface Feedback {
   xpEarned: number;
 }
 
+interface SavedConversation {
+  scenario: Scenario;
+  messages: Message[];
+  inputMode: InputMode;
+  environment: EnvironmentType;
+  timestamp: number;
+}
+
 type ViewState = 'select' | 'chat' | 'feedback';
+type InputMode = 'text' | 'voice' | 'elevenlabs';
+
+// ===== Environment/Ambiance Types =====
+
+type EnvironmentType = 
+  | 'none'
+  | 'cafe'
+  | 'office'
+  | 'restaurant'
+  | 'hospital'
+  | 'street'
+  | 'train_station'
+  | 'airport'
+  | 'park'
+  | 'home'
+  | 'supermarket'
+  | 'library';
+
+interface EnvironmentConfig {
+  id: EnvironmentType;
+  name: string;
+  icon: string;
+  description: string;
+  // Using royalty-free ambient sound URLs (placeholders - would need actual hosted files)
+  audioUrl?: string;
+}
+
+const ENVIRONMENTS: EnvironmentConfig[] = [
+  { id: 'none', name: 'No Background', icon: '🔇', description: 'Silent background' },
+  { id: 'cafe', name: 'Café', icon: '☕', description: 'Coffee shop chatter, espresso machines', audioUrl: '/audio/ambiance/cafe.mp3' },
+  { id: 'office', name: 'Office', icon: '🏢', description: 'Keyboard typing, printer, quiet murmurs', audioUrl: '/audio/ambiance/office.mp3' },
+  { id: 'restaurant', name: 'Restaurant', icon: '🍽️', description: 'Dishes clinking, conversations, kitchen sounds', audioUrl: '/audio/ambiance/restaurant.mp3' },
+  { id: 'hospital', name: 'Hospital', icon: '🏥', description: 'Quiet hallways, distant announcements', audioUrl: '/audio/ambiance/hospital.mp3' },
+  { id: 'street', name: 'City Street', icon: '🚗', description: 'Traffic, pedestrians, city sounds', audioUrl: '/audio/ambiance/street.mp3' },
+  { id: 'train_station', name: 'Train Station', icon: '🚂', description: 'Announcements, train sounds, crowd', audioUrl: '/audio/ambiance/train.mp3' },
+  { id: 'airport', name: 'Airport', icon: '✈️', description: 'Announcements, crowds, rolling luggage', audioUrl: '/audio/ambiance/airport.mp3' },
+  { id: 'park', name: 'Park', icon: '🌳', description: 'Birds singing, wind, nature sounds', audioUrl: '/audio/ambiance/park.mp3' },
+  { id: 'home', name: 'Home', icon: '🏠', description: 'Quiet indoor ambiance', audioUrl: '/audio/ambiance/home.mp3' },
+  { id: 'supermarket', name: 'Supermarket', icon: '🛒', description: 'Shopping carts, beeping, announcements', audioUrl: '/audio/ambiance/supermarket.mp3' },
+  { id: 'library', name: 'Library', icon: '📚', description: 'Very quiet, page turns, whispers', audioUrl: '/audio/ambiance/library.mp3' },
+];
+
+const STORAGE_KEY = 'discens_conversation_state';
 
 export default function ConversationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [view, setView] = useState<ViewState>('select');
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
@@ -43,7 +99,153 @@ export default function ConversationPage() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [inputMode, setInputMode] = useState<InputMode>('text');
+  const [customScenario, setCustomScenario] = useState('');
+  const [customEnvironment, setCustomEnvironment] = useState<EnvironmentType>('none');
+  const [showCustomDialog, setShowCustomDialog] = useState(false);
+  const [savedConversation, setSavedConversation] = useState<SavedConversation | null>(null);
+  const [showContinueDialog, setShowContinueDialog] = useState(false);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentType>('none');
+  const [showEnvironmentPicker, setShowEnvironmentPicker] = useState(false);
+  const [ambianceVolume, setAmbianceVolume] = useState(0.3);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const ambianceAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // ElevenLabs conversation hook
+  const elevenLabsConversation = useConversation({
+    onConnect: () => {
+      console.log('ElevenLabs connected');
+    },
+    onDisconnect: () => {
+      console.log('ElevenLabs disconnected');
+    },
+    onMessage: (message) => {
+      if (message.message) {
+        const role = message.source === 'user' ? 'user' : 'assistant';
+        setMessages(prev => {
+          // Avoid duplicates
+          const lastMsg = prev[prev.length - 1];
+          if (lastMsg?.role === role && lastMsg?.content === message.message) {
+            return prev;
+          }
+          return [...prev, { role, content: message.message }];
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('ElevenLabs error:', error);
+    },
+  });
+
+  // ===== Effects =====
+
+  // Load session from URL param on mount
+  useEffect(() => {
+    const sessionIdFromUrl = searchParams.get('session');
+    if (sessionIdFromUrl) {
+      setIsLoadingSession(true);
+      fetch(`/api/conversation/sessions/${sessionIdFromUrl}`)
+        .then(res => res.ok ? res.json() : Promise.reject('Session not found'))
+        .then(data => {
+          const session = data.session;
+          setSessionId(session.id);
+          setSelectedScenario({
+            id: session.scenario_id,
+            name: session.scenario_name,
+            description: session.scenario_description || '',
+            vocabulary: [],
+            defaultEnvironment: session.environment as EnvironmentType,
+          });
+          setMessages(session.messages || []);
+          setInputMode((session.input_mode || 'text') as InputMode);
+          setSelectedEnvironment((session.environment || 'none') as EnvironmentType);
+          
+          // If completed, show feedback
+          if (session.completed_at && session.feedback) {
+            setFeedback(session.feedback);
+            setView('feedback');
+          } else if (session.messages && session.messages.length > 0) {
+            setView('chat');
+          }
+          setIsLoadingSession(false);
+        })
+        .catch(() => {
+          // Session not found, remove from URL
+          router.replace('/conversation');
+          setIsLoadingSession(false);
+        });
+    }
+  }, [searchParams, router]);
+
+  // Check for saved conversation on mount (only if no session from URL)
+  useEffect(() => {
+    const sessionIdFromUrl = searchParams.get('session');
+    if (sessionIdFromUrl) return; // Skip if loading from URL
+    
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed: SavedConversation = JSON.parse(saved);
+        const isRecent = Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000;
+        if (isRecent && parsed.messages.length > 0) {
+          setSavedConversation(parsed);
+          setShowContinueDialog(true);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, [searchParams]);
+
+  // Save conversation state (to localStorage for quick access)
+  useEffect(() => {
+    if (view === 'chat' && selectedScenario && messages.length > 0) {
+      const state: SavedConversation = {
+        scenario: selectedScenario,
+        messages,
+        inputMode,
+        environment: selectedEnvironment,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+  }, [view, selectedScenario, messages, inputMode, selectedEnvironment]);
+
+  // Sync messages to database session
+  useEffect(() => {
+    if (sessionId && messages.length > 0) {
+      // Debounce updates to avoid too many requests
+      const timeoutId = setTimeout(() => {
+        fetch(`/api/conversation/sessions/${sessionId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages,
+            environment: selectedEnvironment,
+            inputMode,
+          }),
+        }).catch(console.error);
+      }, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [sessionId, messages, selectedEnvironment, inputMode]);
+
+  // Browser guard
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (view === 'chat' && messages.length > 0) {
+        e.preventDefault();
+        e.returnValue = 'You have an active conversation. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [view, messages]);
 
   // Fetch scenarios
   useEffect(() => {
@@ -52,7 +254,12 @@ export default function ConversationPage() {
         const response = await fetch('/api/conversation');
         if (response.ok) {
           const data = await response.json();
-          setScenarios(data.scenarios);
+          // Add default environments to scenarios
+          const scenariosWithEnv = data.scenarios.map((s: Scenario) => ({
+            ...s,
+            defaultEnvironment: getDefaultEnvironment(s.id),
+          }));
+          setScenarios(scenariosWithEnv);
         }
       } catch (error) {
         console.error('Failed to load scenarios:', error);
@@ -61,41 +268,179 @@ export default function ConversationPage() {
     loadScenarios();
   }, []);
 
-  // Auto-scroll to bottom of messages
+  // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Start conversation
-  const startConversation = useCallback(async (scenario: Scenario) => {
-    setSelectedScenario(scenario);
-    setMessages([]);
-    setView('chat');
-    setIsLoading(true);
+  // Manage ambiance audio
+  useEffect(() => {
+    if (view === 'chat' && selectedEnvironment !== 'none') {
+      const env = ENVIRONMENTS.find(e => e.id === selectedEnvironment);
+      if (env?.audioUrl && ambianceAudioRef.current) {
+        ambianceAudioRef.current.src = env.audioUrl;
+        ambianceAudioRef.current.volume = ambianceVolume;
+        ambianceAudioRef.current.loop = true;
+        ambianceAudioRef.current.play().catch(() => {
+          // Autoplay might be blocked
+        });
+      }
+    } else if (ambianceAudioRef.current) {
+      ambianceAudioRef.current.pause();
+    }
 
+    return () => {
+      if (ambianceAudioRef.current) {
+        ambianceAudioRef.current.pause();
+      }
+    };
+  }, [view, selectedEnvironment, ambianceVolume]);
+
+  // ===== Helper Functions =====
+
+  function getDefaultEnvironment(scenarioId: string): EnvironmentType {
+    const mapping: Record<string, EnvironmentType> = {
+      cafe: 'cafe',
+      doctor: 'hospital',
+      shopping: 'supermarket',
+      landlord: 'home',
+      work: 'office',
+      restaurant: 'restaurant',
+    };
+    return mapping[scenarioId] || 'none';
+  }
+
+  // ===== Conversation Functions =====
+
+  const continueConversation = useCallback(() => {
+    if (savedConversation) {
+      setSelectedScenario(savedConversation.scenario);
+      setMessages(savedConversation.messages);
+      setInputMode(savedConversation.inputMode);
+      setSelectedEnvironment(savedConversation.environment || 'none');
+      setView('chat');
+      setShowContinueDialog(false);
+    }
+  }, [savedConversation]);
+
+  const startNewConversation = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setSavedConversation(null);
+    setShowContinueDialog(false);
+  }, []);
+
+  const clearSavedConversation = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setSavedConversation(null);
+  }, []);
+
+  // Create a new database session for the conversation
+  const createSession = useCallback(async (scenario: Scenario, environment: EnvironmentType): Promise<string | null> => {
     try {
-      const response = await fetch('/api/conversation', {
+      const response = await fetch('/api/conversation/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           scenarioId: scenario.id,
-          messages: [],
-          isStart: true,
+          scenarioName: scenario.name,
+          scenarioDescription: scenario.description,
+          environment,
+          inputMode,
         }),
       });
-
+      
       if (response.ok) {
         const data = await response.json();
-        setMessages([{ role: 'assistant', content: data.response }]);
+        return data.session.id;
       }
     } catch (error) {
-      console.error('Failed to start conversation:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to create session:', error);
     }
-  }, []);
+    return null;
+  }, [inputMode]);
 
-  // Send message
+  // Start conversation with ElevenLabs or text mode
+  const startConversation = useCallback(async (scenario: Scenario) => {
+    setSelectedScenario(scenario);
+    setMessages([]);
+    const environment = scenario.defaultEnvironment || customEnvironment || 'none';
+    setSelectedEnvironment(environment);
+    setView('chat');
+    setIsLoading(true);
+
+    // Create session in database and update URL
+    const newSessionId = await createSession(scenario, environment);
+    if (newSessionId) {
+      setSessionId(newSessionId);
+      router.push(`/conversation?session=${newSessionId}`, { scroll: false });
+    }
+
+    if (inputMode === 'elevenlabs') {
+      // Start ElevenLabs conversation
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
+        if (agentId) {
+          await elevenLabsConversation.startSession({
+            agentId,
+            connectionType: 'websocket',
+            dynamicVariables: {
+              scenario: scenario.name,
+              description: scenario.description,
+              environment: environment,
+              language: 'German',
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to start ElevenLabs conversation:', error);
+        // Fall back to text mode
+        setInputMode('text');
+      }
+      setIsLoading(false);
+    } else {
+      // Text-based conversation
+      try {
+        const response = await fetch('/api/conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scenarioId: scenario.id,
+            messages: [],
+            isStart: true,
+            customDescription: scenario.id === 'custom' ? customScenario : undefined,
+            environment: environment,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setMessages([{ role: 'assistant', content: data.response }]);
+        }
+      } catch (error) {
+        console.error('Failed to start conversation:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [customScenario, inputMode, customEnvironment, elevenLabsConversation, createSession, router]);
+
+  const startCustomScenario = useCallback(() => {
+    if (!customScenario.trim()) return;
+    
+    const customScenarioObj: Scenario = {
+      id: 'custom',
+      name: 'Custom Scenario',
+      description: customScenario,
+      vocabulary: [],
+      defaultEnvironment: customEnvironment,
+    };
+    
+    setShowCustomDialog(false);
+    startConversation(customScenarioObj);
+  }, [customScenario, customEnvironment, startConversation]);
+
+  // Send text message
   const sendMessage = useCallback(async () => {
     if (!input.trim() || !selectedScenario || isLoading) return;
 
@@ -111,6 +456,8 @@ export default function ConversationPage() {
         body: JSON.stringify({
           scenarioId: selectedScenario.id,
           messages: [...messages, { role: 'user', content: userMessage }],
+          customDescription: selectedScenario.id === 'custom' ? selectedScenario.description : undefined,
+          environment: selectedEnvironment,
         }),
       });
 
@@ -123,11 +470,21 @@ export default function ConversationPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [input, selectedScenario, isLoading, messages]);
+  }, [input, selectedScenario, isLoading, messages, selectedEnvironment]);
 
-  // End conversation and get feedback
+  // End conversation
   const endConversation = useCallback(async () => {
     if (!selectedScenario || messages.length < 2) return;
+
+    // Stop ElevenLabs if active
+    if (inputMode === 'elevenlabs' && elevenLabsConversation.status === 'connected') {
+      await elevenLabsConversation.endSession();
+    }
+
+    // Stop ambiance
+    if (ambianceAudioRef.current) {
+      ambianceAudioRef.current.pause();
+    }
 
     setIsLoading(true);
 
@@ -145,59 +502,322 @@ export default function ConversationPage() {
         const data = await response.json();
         setFeedback(data);
         setView('feedback');
+        clearSavedConversation();
+
+        // Update session with feedback and mark as completed
+        if (sessionId) {
+          await fetch(`/api/conversation/sessions/${sessionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages,
+              feedback: data,
+              overallScore: data.overallScore,
+              fluencyScore: data.fluencyScore,
+              grammarScore: data.grammarScore,
+              vocabularyScore: data.vocabularyScore,
+              xpEarned: data.xpEarned,
+              completed: true,
+            }),
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to get feedback:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedScenario, messages]);
+  }, [selectedScenario, messages, inputMode, elevenLabsConversation, clearSavedConversation, sessionId]);
 
-  // Scenario Selection View
-  if (view === 'select') {
+  const changeScenario = useCallback(async () => {
+    // Stop ElevenLabs if active
+    if (inputMode === 'elevenlabs' && elevenLabsConversation.status === 'connected') {
+      await elevenLabsConversation.endSession();
+    }
+    // Stop ambiance
+    if (ambianceAudioRef.current) {
+      ambianceAudioRef.current.pause();
+    }
+    setView('select');
+    setSelectedScenario(null);
+    setMessages([]);
+    setFeedback(null);
+    setSessionId(null);
+    clearSavedConversation();
+    // Clear session from URL
+    router.push('/conversation', { scroll: false });
+  }, [inputMode, elevenLabsConversation, clearSavedConversation, router]);
+
+  // ===== Render: Loading Session =====
+
+  if (isLoadingSession) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-2">Real Conversations</h1>
-        <p className="text-muted-foreground mb-8">
-          Practice speaking in realistic scenarios. The AI won&apos;t interrupt you—you&apos;ll get feedback after!
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {scenarios.map((scenario) => (
-            <button
-              key={scenario.id}
-              onClick={() => startConversation(scenario)}
-              className="p-6 rounded-xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all text-left group"
-            >
-              <h3 className="font-semibold text-lg group-hover:text-primary transition-colors mb-1">
-                {scenario.name}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                {scenario.description}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {scenario.vocabulary.slice(0, 4).map((word) => (
-                  <span
-                    key={word}
-                    className="px-2 py-1 rounded-md bg-muted text-xs text-muted-foreground"
-                  >
-                    {word}
-                  </span>
-                ))}
-                {scenario.vocabulary.length > 4 && (
-                  <span className="px-2 py-1 rounded-md bg-muted text-xs text-muted-foreground">
-                    +{scenario.vocabulary.length - 4} more
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
+      <div className="max-w-md mx-auto px-4 py-12">
+        <div className="bg-card border border-border rounded-2xl p-8 text-center">
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Loading Conversation...</h2>
+          <p className="text-muted-foreground">
+            Restoring your previous session
+          </p>
         </div>
       </div>
     );
   }
 
-  // Feedback View
+  // ===== Render: Continue Dialog =====
+
+  if (showContinueDialog && savedConversation) {
+    const timeAgo = Math.round((Date.now() - savedConversation.timestamp) / 60000);
+    const timeText = timeAgo < 60 
+      ? `${timeAgo} minute${timeAgo !== 1 ? 's' : ''} ago`
+      : `${Math.round(timeAgo / 60)} hour${Math.round(timeAgo / 60) !== 1 ? 's' : ''} ago`;
+
+    return (
+      <div className="max-w-md mx-auto px-4 py-12">
+        <div className="bg-card border border-border rounded-2xl p-8 text-center">
+          <span className="text-5xl mb-4 block">💬</span>
+          <h2 className="text-2xl font-bold mb-2">Continue Conversation?</h2>
+          <p className="text-muted-foreground mb-6">
+            You have an unfinished conversation from {timeText}.
+          </p>
+          
+          <div className="bg-muted/50 rounded-xl p-4 mb-6 text-left">
+            <div className="text-sm font-medium mb-1">{savedConversation.scenario.name}</div>
+            <div className="text-xs text-muted-foreground mb-2">
+              {savedConversation.messages.length} messages
+            </div>
+            <div className="text-sm text-muted-foreground italic line-clamp-2">
+              &quot;{savedConversation.messages[savedConversation.messages.length - 1]?.content}&quot;
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={continueConversation}
+              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+            >
+              Continue Conversation
+            </button>
+            <button
+              onClick={startNewConversation}
+              className="w-full py-3 rounded-xl border border-border hover:bg-accent font-medium"
+            >
+              Start New Conversation
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== Render: Scenario Selection =====
+
+  if (view === 'select') {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-2">Real Conversations</h1>
+        <p className="text-muted-foreground mb-8">
+          Practice speaking in realistic scenarios with AI-powered voice conversations!
+        </p>
+
+        {/* Input Mode Toggle */}
+        <div className="flex flex-wrap items-center gap-4 mb-6 p-4 rounded-xl bg-card border border-border">
+          <span className="text-sm font-medium">Conversation Mode:</span>
+          <button
+            onClick={() => setInputMode('text')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              inputMode === 'text'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted hover:bg-muted/80'
+            }`}
+          >
+            ⌨️ Text
+          </button>
+          <button
+            onClick={() => setInputMode('elevenlabs')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              inputMode === 'elevenlabs'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted hover:bg-muted/80'
+            }`}
+          >
+            🎙️ Voice (ElevenLabs)
+          </button>
+          {inputMode === 'elevenlabs' && (
+            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              Real-time AI voice conversation
+            </span>
+          )}
+        </div>
+
+        {/* Environment Selector */}
+        <div className="mb-6 p-4 rounded-xl bg-card border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium">Background Ambiance:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Volume:</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={ambianceVolume}
+                onChange={(e) => setAmbianceVolume(parseFloat(e.target.value))}
+                className="w-20 h-2 rounded-lg appearance-none bg-muted"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+            {ENVIRONMENTS.map((env) => (
+              <button
+                key={env.id}
+                onClick={() => setSelectedEnvironment(env.id)}
+                className={`p-3 rounded-xl text-center transition-all ${
+                  selectedEnvironment === env.id
+                    ? 'bg-primary/20 border-2 border-primary'
+                    : 'bg-muted/50 border-2 border-transparent hover:bg-muted'
+                }`}
+                title={env.description}
+              >
+                <span className="text-2xl block mb-1">{env.icon}</span>
+                <span className="text-xs">{env.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Scenario Button */}
+        <button
+          onClick={() => setShowCustomDialog(true)}
+          className="w-full p-6 mb-6 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-all text-center"
+        >
+          <span className="text-3xl mb-2 block">✨</span>
+          <h3 className="font-semibold text-lg text-primary mb-1">
+            Create Custom Scenario
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Describe any situation and environment you want to practice
+          </p>
+        </button>
+
+        {/* Custom Scenario Dialog */}
+        {showCustomDialog && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full shadow-lg max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-bold mb-4">Create Your Scenario</h2>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Describe the situation:</label>
+                <textarea
+                  value={customScenario}
+                  onChange={(e) => setCustomScenario(e.target.value)}
+                  placeholder="Example: I'm at a bakery in Munich trying to order breakfast pastries and ask about gluten-free options..."
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">Choose the environment:</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {ENVIRONMENTS.map((env) => (
+                    <button
+                      key={env.id}
+                      onClick={() => setCustomEnvironment(env.id)}
+                      className={`p-2 rounded-lg text-center transition-all ${
+                        customEnvironment === env.id
+                          ? 'bg-primary/20 border-2 border-primary'
+                          : 'bg-muted/50 border-2 border-transparent hover:bg-muted'
+                      }`}
+                      title={env.description}
+                    >
+                      <span className="text-xl block">{env.icon}</span>
+                      <span className="text-[10px]">{env.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={startCustomScenario}
+                  disabled={!customScenario.trim()}
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-semibold disabled:opacity-50"
+                >
+                  Start Conversation
+                </button>
+                <button
+                  onClick={() => setShowCustomDialog(false)}
+                  className="flex-1 py-3 rounded-xl border border-border hover:bg-accent"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <h2 className="text-lg font-semibold mb-4">Or choose a scenario:</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {scenarios.map((scenario) => {
+            const defaultEnv = ENVIRONMENTS.find(e => e.id === scenario.defaultEnvironment);
+            return (
+              <button
+                key={scenario.id}
+                onClick={() => {
+                  setSelectedEnvironment(scenario.defaultEnvironment || 'none');
+                  startConversation(scenario);
+                }}
+                className="p-6 rounded-xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all text-left group"
+              >
+                <div className="flex items-start justify-between mb-1">
+                  <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                    {scenario.name}
+                  </h3>
+                  {defaultEnv && (
+                    <span className="text-lg" title={`Environment: ${defaultEnv.name}`}>
+                      {defaultEnv.icon}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {scenario.description}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {scenario.vocabulary.slice(0, 4).map((word) => (
+                    <span
+                      key={word}
+                      className="px-2 py-1 rounded-md bg-muted text-xs text-muted-foreground"
+                    >
+                      {word}
+                    </span>
+                  ))}
+                  {scenario.vocabulary.length > 4 && (
+                    <span className="px-2 py-1 rounded-md bg-muted text-xs text-muted-foreground">
+                      +{scenario.vocabulary.length - 4} more
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Copy session link to clipboard
+  const copySessionLink = useCallback(() => {
+    if (sessionId) {
+      const link = `${window.location.origin}/conversation?session=${sessionId}`;
+      navigator.clipboard.writeText(link);
+    }
+  }, [sessionId]);
+
+  // ===== Render: Feedback View =====
+
   if (view === 'feedback' && feedback) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -205,6 +825,22 @@ export default function ConversationPage() {
           <span className="text-6xl mb-4 block">🎭</span>
           <h1 className="text-2xl font-bold mb-2">Conversation Complete!</h1>
           <p className="text-muted-foreground">{feedback.encouragement}</p>
+          
+          {/* Session ID with copy link */}
+          {sessionId && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
+                Session: {sessionId.slice(0, 8)}...
+              </span>
+              <button
+                onClick={copySessionLink}
+                className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                title="Copy shareable link"
+              >
+                📋 Copy Link
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Scores */}
@@ -236,7 +872,7 @@ export default function ConversationPage() {
           </div>
         )}
 
-        {/* Areas for Improvement */}
+        {/* Improvements */}
         {feedback.improvements.length > 0 && (
           <div className="mb-6">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -295,26 +931,109 @@ export default function ConversationPage() {
     );
   }
 
-  // Chat View
+  // ===== Render: Chat View =====
+
+  const currentEnv = ENVIRONMENTS.find(e => e.id === selectedEnvironment);
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 h-[calc(100dvh-8rem)] flex flex-col">
+      {/* Hidden audio element for ambiance */}
+      <audio ref={ambianceAudioRef} />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
-        <div>
-          <h1 className="font-semibold">{selectedScenario?.name}</h1>
-          <p className="text-sm text-muted-foreground">{selectedScenario?.description}</p>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="font-semibold">{selectedScenario?.name}</h1>
+            {currentEnv && currentEnv.id !== 'none' && (
+              <span className="text-lg" title={`Environment: ${currentEnv.name}`}>
+                {currentEnv.icon}
+              </span>
+            )}
+            {sessionId && (
+              <button
+                onClick={copySessionLink}
+                className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors font-mono"
+                title="Copy session link"
+              >
+                {sessionId.slice(0, 8)}... 📋
+              </button>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground line-clamp-1">{selectedScenario?.description}</p>
         </div>
-        <button
-          onClick={endConversation}
-          disabled={messages.length < 2 || isLoading}
-          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
-        >
-          End & Get Feedback
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Environment picker */}
+          <button
+            onClick={() => setShowEnvironmentPicker(!showEnvironmentPicker)}
+            className="p-2 rounded-lg bg-muted text-sm"
+            title="Change environment"
+          >
+            🔊
+          </button>
+          {/* Mode indicator */}
+          <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+            inputMode === 'elevenlabs' 
+              ? 'bg-green-500/20 text-green-600' 
+              : 'bg-muted text-muted-foreground'
+          }`}>
+            {inputMode === 'elevenlabs' ? '🎙️ Voice' : '⌨️ Text'}
+          </span>
+          <button
+            onClick={changeScenario}
+            className="px-3 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-muted/80"
+          >
+            Change
+          </button>
+          <button
+            onClick={endConversation}
+            disabled={messages.length < 2 || isLoading}
+            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+          >
+            End & Get Feedback
+          </button>
+        </div>
       </div>
 
+      {/* Environment picker dropdown */}
+      {showEnvironmentPicker && (
+        <div className="mb-4 p-3 rounded-xl bg-card border border-border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Background Ambiance</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={ambianceVolume}
+              onChange={(e) => setAmbianceVolume(parseFloat(e.target.value))}
+              className="w-24 h-2 rounded-lg appearance-none bg-muted"
+            />
+          </div>
+          <div className="grid grid-cols-6 gap-1">
+            {ENVIRONMENTS.map((env) => (
+              <button
+                key={env.id}
+                onClick={() => {
+                  setSelectedEnvironment(env.id);
+                  setShowEnvironmentPicker(false);
+                }}
+                className={`p-2 rounded-lg text-center transition-all ${
+                  selectedEnvironment === env.id
+                    ? 'bg-primary/20 border border-primary'
+                    : 'bg-muted/50 hover:bg-muted'
+                }`}
+                title={env.description}
+              >
+                <span className="text-lg">{env.icon}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Vocabulary hint */}
-      {selectedScenario && (
+      {selectedScenario && selectedScenario.vocabulary.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           <span className="text-xs text-muted-foreground">Helpful words:</span>
           {selectedScenario.vocabulary.map((word) => (
@@ -322,6 +1041,34 @@ export default function ConversationPage() {
               {word}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* ElevenLabs Status */}
+      {inputMode === 'elevenlabs' && (
+        <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${
+                elevenLabsConversation.status === 'connected' 
+                  ? 'bg-green-500 animate-pulse' 
+                  : 'bg-muted-foreground'
+              }`} />
+              <span className="text-sm font-medium">
+                {elevenLabsConversation.status === 'connected' 
+                  ? (elevenLabsConversation.isSpeaking ? '🔊 AI Speaking...' : '👂 Listening...') 
+                  : 'Connecting...'}
+              </span>
+            </div>
+            {elevenLabsConversation.status !== 'connected' && (
+              <button
+                onClick={() => startConversation(selectedScenario!)}
+                className="px-3 py-1 rounded-lg bg-green-500 text-white text-sm"
+              >
+                Connect
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -358,24 +1105,46 @@ export default function ConversationPage() {
       </div>
 
       {/* Input */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-          placeholder="Type your response in German..."
-          disabled={isLoading}
-          className="flex-1 px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        <button
-          onClick={sendMessage}
-          disabled={!input.trim() || isLoading}
-          className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50"
-        >
-          Send
-        </button>
-      </div>
+      {inputMode !== 'elevenlabs' && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+            placeholder="Type your response in German..."
+            disabled={isLoading}
+            className="flex-1 px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!input.trim() || isLoading}
+            className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50"
+          >
+            Send
+          </button>
+        </div>
+      )}
+
+      {/* ElevenLabs voice input indicator */}
+      {inputMode === 'elevenlabs' && elevenLabsConversation.status === 'connected' && (
+        <div className="p-4 rounded-xl bg-card border border-border text-center">
+          <div className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center ${
+            elevenLabsConversation.isSpeaking 
+              ? 'bg-blue-500/20 animate-pulse' 
+              : 'bg-green-500/20'
+          }`}>
+            <span className="text-3xl">
+              {elevenLabsConversation.isSpeaking ? '🔊' : '🎤'}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {elevenLabsConversation.isSpeaking 
+              ? 'AI is speaking... Listen and wait for your turn'
+              : 'Your turn! Speak in German...'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
