@@ -15,6 +15,9 @@ import {
   LuClock,
 } from '@/components/ui/icons';
 
+// Force dynamic rendering - this page requires authentication
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Profile',
 };
