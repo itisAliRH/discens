@@ -1,4 +1,13 @@
 import Link from 'next/link';
+import {
+  LuHome,
+  LuBookOpen,
+  LuRotateCcw,
+  LuMessageCircle,
+  LuBrain,
+  LuHistory,
+  LuUser,
+} from 'react-icons/lu';
 
 /**
  * Main app layout with navigation
@@ -24,12 +33,12 @@ export default function MainLayout({
 
           {/* Navigation */}
           <nav className="flex items-center gap-1">
-            <NavLink href="/dashboard" icon="🏠" label="Home" />
-            <NavLink href="/learn" icon="📚" label="Learn" />
-            <NavLink href="/review" icon="🔄" label="Review" />
-            <NavLink href="/conversation" icon="💬" label="Talk" />
-            <NavLink href="/history" icon="📜" label="History" />
-            <NavLink href="/memory" icon="🧠" label="Memory" />
+            <NavLink href="/dashboard" icon={<LuHome />} label="Home" />
+            <NavLink href="/learn" icon={<LuBookOpen />} label="Learn" />
+            <NavLink href="/review" icon={<LuRotateCcw />} label="Review" />
+            <NavLink href="/conversation" icon={<LuMessageCircle />} label="Talk" />
+            <NavLink href="/history" icon={<LuHistory />} label="History" />
+            <NavLink href="/memory" icon={<LuBrain />} label="Memory" />
           </nav>
 
           {/* User menu */}
@@ -37,7 +46,7 @@ export default function MainLayout({
             href="/profile"
             className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-colors"
           >
-            <span className="text-xs">👤</span>
+            <LuUser className="w-4 h-4" />
           </Link>
         </div>
       </header>
@@ -50,11 +59,11 @@ export default function MainLayout({
       {/* Mobile bottom navigation */}
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 backdrop-blur-sm z-50">
         <div className="flex items-center justify-around h-16">
-          <MobileNavLink href="/dashboard" icon="🏠" label="Home" />
-          <MobileNavLink href="/learn" icon="📚" label="Learn" />
-          <MobileNavLink href="/conversation" icon="💬" label="Talk" />
-          <MobileNavLink href="/history" icon="📜" label="History" />
-          <MobileNavLink href="/profile" icon="👤" label="Profile" />
+          <MobileNavLink href="/dashboard" icon={<LuHome />} label="Home" />
+          <MobileNavLink href="/learn" icon={<LuBookOpen />} label="Learn" />
+          <MobileNavLink href="/conversation" icon={<LuMessageCircle />} label="Talk" />
+          <MobileNavLink href="/history" icon={<LuHistory />} label="History" />
+          <MobileNavLink href="/profile" icon={<LuUser />} label="Profile" />
         </div>
       </nav>
 
@@ -64,25 +73,25 @@ export default function MainLayout({
   );
 }
 
-function NavLink({ href, icon, label }: { href: string; icon: string; label: string }) {
+function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
     <Link
       href={href}
       className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
     >
-      <span>{icon}</span>
+      <span className="w-4 h-4">{icon}</span>
       <span className="text-sm">{label}</span>
     </Link>
   );
 }
 
-function MobileNavLink({ href, icon, label }: { href: string; icon: string; label: string }) {
+function MobileNavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
     <Link
       href={href}
       className="flex flex-col items-center gap-1 px-3 py-1 text-muted-foreground hover:text-foreground transition-colors"
     >
-      <span className="text-xl">{icon}</span>
+      <span className="w-5 h-5">{icon}</span>
       <span className="text-xs">{label}</span>
     </Link>
   );
