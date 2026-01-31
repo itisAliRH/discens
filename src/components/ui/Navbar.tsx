@@ -48,11 +48,34 @@ export default function Navbar() {
             <span className="font-bold text-xl hidden sm:inline">Discens</span>
           </Link>
 
-          {/* Right: Theme Toggle, Language Selector, User Menu */}
+          {/* Right: Theme Toggle, Language Selector, User Menu or Auth Buttons */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <LanguageSelector />
-            {isLoggedIn && <UserMenu />}
+            
+            {isLoggedIn === null ? (
+              // Loading state
+              <div className="w-20 h-9 bg-muted animate-pulse rounded-lg" />
+            ) : isLoggedIn ? (
+              // Logged in: show user menu
+              <UserMenu />
+            ) : (
+              // Not logged in: show login/get started buttons
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="hidden sm:inline-flex px-4 py-2 text-sm font-medium hover:text-primary transition-colors"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
+                >
+                  Get Started
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
