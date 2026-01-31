@@ -8,6 +8,7 @@ import {
   LuHistory,
   LuUser,
 } from 'react-icons/lu';
+import LanguageSelector from '@/components/ui/LanguageSelector';
 
 /**
  * Main app layout with navigation
@@ -41,13 +42,16 @@ export default function MainLayout({
             <NavLink href="/memory" icon={<LuBrain />} label="Memory" />
           </nav>
 
-          {/* User menu */}
-          <Link
-            href="/profile"
-            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-colors"
-          >
-            <LuUser className="w-4 h-4" />
-          </Link>
+          {/* Right side: Language selector + User menu */}
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            <Link
+              href="/profile"
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-colors"
+            >
+              <LuUser className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </header>
 
