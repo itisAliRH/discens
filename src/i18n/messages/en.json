@@ -27,7 +27,9 @@
     "history": "History",
     "profile": "Profile",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "login": "Log in",
+    "getStarted": "Get Started"
   },
   "auth": {
     "login": {

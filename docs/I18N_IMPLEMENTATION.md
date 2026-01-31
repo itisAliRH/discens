@@ -148,29 +148,51 @@ const t = useTranslations('dashboard');
 The following components still need to be updated to use translations:
 
 ### Pages
-- [ ] `/[locale]/(auth)/login/page.tsx`
-- [ ] `/[locale]/(auth)/forgot-password/page.tsx`
-- [ ] `/[locale]/(auth)/reset-password/page.tsx`
-- [ ] `/[locale]/(main)/dashboard/page.tsx`
-- [ ] `/[locale]/(main)/learn/page.tsx`
-- [ ] `/[locale]/(main)/review/page.tsx`
-- [ ] `/[locale]/(main)/memory/page.tsx`
-- [ ] `/[locale]/(main)/conversation/page.tsx`
-- [ ] `/[locale]/(main)/history/page.tsx`
-- [ ] `/[locale]/(main)/profile/page.tsx`
-- [ ] `/[locale]/(main)/profile/edit/page.tsx`
-- [ ] `/[locale]/onboarding/page.tsx`
+- [x] `/[locale]/(auth)/login/page.tsx` ✅ **Completed**
+- [x] `/[locale]/(auth)/forgot-password/page.tsx` ✅ **Completed**
+- [x] `/[locale]/(auth)/reset-password/page.tsx` ✅ **Completed**
+- [ ] `/[locale]/(main)/dashboard/page.tsx` - Large server component with many hardcoded strings
+- [ ] `/[locale]/(main)/learn/page.tsx` - Large client component with complex quiz logic
+- [ ] `/[locale]/(main)/review/page.tsx` - Large client component with review card logic
+- [ ] `/[locale]/(main)/memory/page.tsx` - Large client component with materials management
+- [ ] `/[locale]/(main)/conversation/page.tsx` - Voice conversation interface
+- [ ] `/[locale]/(main)/history/page.tsx` - Learning history display
+- [ ] `/[locale]/(main)/profile/page.tsx` - Profile display page
+- [ ] `/[locale]/(main)/profile/edit/page.tsx` - Profile editing form
+- [ ] `/[locale]/onboarding/page.tsx` - Initial user setup wizard
 
 ### UI Components
-- [ ] `src/components/ui/UserMenu.tsx`
-- [ ] `src/components/ui/ThemeToggle.tsx`
-- [ ] `src/app/[locale]/(main)/layout.tsx` (navigation labels)
+- [x] `src/components/ui/Navbar.tsx` ✅ **Completed** (has auth buttons that need translation)
+- [ ] `src/components/ui/UserMenu.tsx` - User dropdown menu
+- [ ] `src/components/ui/ThemeToggle.tsx` - Theme switcher tooltip (optional)
+- [ ] `src/app/[locale]/(main)/layout.tsx` - Navigation labels (if any remain)
 
-## Adding New Translations
+## Translation Status
 
-1. Add the key to both `en.json` and `de.json`
-2. Use the translation in your component with `useTranslations()`
-3. Test both languages
+✅ **Completed:**
+- i18n configuration (`src/i18n/config.ts`)
+- English translations (`src/i18n/messages/en.json`)
+- German translations (`src/i18n/messages/de.json`)
+- Request handler (`src/i18n/request.ts`)
+- Middleware with locale routing
+- Root and locale layouts
+- Language selector component
+- Navbar component (basic structure)
+- All auth pages (login, forgot-password, reset-password)
+
+🚧 **In Progress:**
+- Main application pages (dashboard, learn, review, memory, etc.)
+- Profile pages
+- Onboarding flow
+- UI components (UserMenu, etc.)
+
+📋 **Notes:**
+- Many pages are large client components with extensive hardcoded strings
+- Consider creating a comprehensive translation pass in a follow-up session
+- The core i18n infrastructure is fully functional and working
+- New features should use translations from the start
+
+
 
 Example:
 ```json

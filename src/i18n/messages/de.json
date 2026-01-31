@@ -27,7 +27,9 @@
     "history": "Verlauf",
     "profile": "Profil",
     "settings": "Einstellungen",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "login": "Anmelden",
+    "getStarted": "Loslegen"
   },
   "auth": {
     "login": {

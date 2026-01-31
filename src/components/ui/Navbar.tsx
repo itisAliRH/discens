@@ -7,8 +7,10 @@ import LanguageSelector from './LanguageSelector';
 import UserMenu from './UserMenu';
 import { useEffect, useState } from 'react';
 import { useSupabase } from '@/lib/supabase/client';
+import { useTranslations } from 'next-intl';
 
 export default function Navbar() {
+  const t = useTranslations('nav');
   const pathname = usePathname();
   const supabase = useSupabase();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -66,13 +68,13 @@ export default function Navbar() {
                   href="/login"
                   className="hidden sm:inline-flex px-4 py-2 text-sm font-medium hover:text-primary transition-colors"
                 >
-                  Log in
+                  {t('login')}
                 </Link>
                 <Link
                   href="/login"
                   className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
                 >
-                  Get Started
+                  {t('getStarted')}
                 </Link>
               </div>
             )}

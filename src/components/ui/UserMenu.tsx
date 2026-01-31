@@ -6,8 +6,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { LuUser, LuSettings, LuLogOut, LuChevronDown } from 'react-icons/lu';
 import { useUntypedSupabase } from '@/lib/supabase/client-untyped';
+import { useTranslations } from 'next-intl';
 
 export default function UserMenu() {
+  const t = useTranslations('nav');
   const [isOpen, setIsOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export default function UserMenu() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{userName || 'User'}</p>
-                <p className="text-xs text-muted-foreground truncate">View Profile</p>
+                <p className="text-xs text-muted-foreground truncate">{t('profile')}</p>
               </div>
             </div>
 
@@ -103,7 +105,7 @@ export default function UserMenu() {
                 className="flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors"
               >
                 <LuSettings className="w-4 h-4" />
-                <span className="text-sm">Profile & Settings</span>
+                <span className="text-sm">{t('settings')}</span>
               </Link>
 
               <button
@@ -112,7 +114,7 @@ export default function UserMenu() {
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-red-600 dark:text-red-400 disabled:opacity-50"
               >
                 <LuLogOut className="w-4 h-4" />
-                <span className="text-sm">{isLoading ? 'Logging out...' : 'Log out'}</span>
+                <span className="text-sm">{isLoading ? `${t('logout')}...` : t('logout')}</span>
               </button>
             </div>
           </div>
