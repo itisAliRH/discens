@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import type { LanguageCode, MaterialCategory } from '@/types/database';
 import Link from 'next/link';
+import { LuArrowLeft } from 'react-icons/lu';
 
 type OnboardingStep = 'language' | 'method' | 'description' | 'quiz' | 'review';
 
@@ -218,6 +219,17 @@ export default function OnboardingPage() {
 
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center p-4">
+      {/* Back to Home Button */}
+      <div className="w-full max-w-2xl mb-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <LuArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back to Home</span>
+        </Link>
+      </div>
+
       {/* Login Prompt Modal */}
       {showLoginPrompt && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
