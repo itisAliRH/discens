@@ -61,7 +61,7 @@ function LoginForm() {
 
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -70,23 +70,6 @@ function LoginForm() {
         });
 
         if (error) throw error;
-
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/(auth)/login/page.tsx:64',message:'User signed up',data:{userId:data.user?.id,hasUser:!!data.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-
-        // Check if memory was created by trigger
-        if (data.user) {
-          const { data: memory, error: memError } = await supabase
-            .from('memories')
-            .select('id, summary')
-            .eq('user_id', data.user.id)
-            .maybeSingle();
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/(auth)/login/page.tsx:84',message:'Memory check after signup',data:{hasMemory:!!memory,memoryId:memory?.id,summary:memory?.summary,memError:memError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
-        }
 
         setMessage({
           type: 'success',

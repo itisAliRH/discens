@@ -35,9 +35,6 @@ export async function GET(request: Request) {
 
     // Check if this is a new user that needs onboarding
     const { data: { user } } = await supabase.auth.getUser();
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/(auth)/callback/route.ts:37',message:'OAuth callback: user retrieved',data:{userId:user?.id,hasUser:!!user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     if (user) {
       // Check if user has completed onboarding by checking their memory
       const { data: memory, error: memoryError } = await supabase
@@ -46,17 +43,10 @@ export async function GET(request: Request) {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/(auth)/callback/route.ts:46',message:'Memory check after OAuth',data:{hasMemory:!!memory,memoryError:memoryError?.message,summary:memory?.summary,userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-
       // If no memory or empty summary, redirect to onboarding
       // Using type assertion since schema might not be deployed yet
       const memoryData = memory as Pick<Memory, 'summary'> | null;
       if (!memoryError && memoryData && memoryData.summary === '') {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/(auth)/callback/route.ts:52',message:'Redirecting to onboarding (empty memory)',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         return NextResponse.redirect(`${origin}/onboarding`);
       }
     }

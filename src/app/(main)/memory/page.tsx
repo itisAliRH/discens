@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import type { MaterialType, MaterialCategory, CEFRLevel } from '@/types/database';
+import ImportMaterialWizard from '@/components/memory/ImportMaterialWizard';
 
 // ===== Types =====
 
@@ -96,6 +97,7 @@ export default function MemoryPage() {
   
   // Dialogs
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showImportWizard, setShowImportWizard] = useState(false);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [deletingMaterial, setDeletingMaterial] = useState<Material | null>(null);
@@ -311,10 +313,16 @@ export default function MemoryPage() {
             <span>✨</span> Generate with AI
           </button>
           <button
+            onClick={() => setShowImportWizard(true)}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium flex items-center gap-2"
+          >
+            <span>📥</span> Import Material
+          </button>
+          <button
             onClick={() => setShowAddDialog(true)}
             className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium flex items-center gap-2"
           >
-            <span>+</span> Add Material
+            <span>+</span> Quick Add
           </button>
         </div>
       </div>
@@ -389,12 +397,20 @@ export default function MemoryPage() {
           <p className="text-muted-foreground mb-6">
             Add your first word, phrase, or grammar rule!
           </p>
-          <button
-            onClick={() => setShowAddDialog(true)}
-            className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
-          >
-            Add Your First Material
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => setShowImportWizard(true)}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold flex items-center gap-2"
+            >
+              <span>📥</span> Import with AI
+            </button>
+            <button
+              onClick={() => setShowAddDialog(true)}
+              className="px-6 py-3 rounded-xl border border-border hover:bg-accent font-semibold"
+            >
+              Quick Add
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -409,11 +425,23 @@ export default function MemoryPage() {
         </div>
       )}
 
-      {/* Add Material Dialog */}
+      {/* Add Material Dialog (Quick Add) */}
       {showAddDialog && (
         <AddMaterialDialog
           onClose={() => setShowAddDialog(false)}
           onSave={handleAddMaterial}
+          isSaving={isSaving}
+        />
+      )}
+
+      {/* Import Material Wizard (AI-powered) */}
+      {showImportWizard && (
+        <ImportMaterialWizard
+          onClose={() => setShowImportWizard(false)}
+          onSave={async (data) => {
+            await handleAddMaterial(data);
+            setShowImportWizard(false);
+          }}
           isSaving={isSaving}
         />
       )}
