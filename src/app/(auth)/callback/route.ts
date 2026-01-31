@@ -4,7 +4,12 @@ import type { Memory } from '@/types/database';
 
 /**
  * OAuth Callback Route
- * Handles the callback from OAuth providers (Google, Apple)
+ * Handles callbacks from:
+ * - OAuth providers (Google, Apple)
+ * - Email confirmation links
+ * - Password reset links
+ * - Magic links
+ * 
  * Exchanges the code for a session and redirects to the appropriate page
  */
 export async function GET(request: Request) {
@@ -13,6 +18,7 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/dashboard';
   const error = searchParams.get('error');
   const error_description = searchParams.get('error_description');
+  const type = searchParams.get('type'); // recovery, signup, magiclink, etc.
 
   // Handle OAuth errors
   if (error) {
@@ -31,6 +37,11 @@ export async function GET(request: Request) {
       return NextResponse.redirect(
         `${origin}/login?error=${encodeURIComponent(exchangeError.message)}`
       );
+    }
+
+    // If this is a password recovery link, redirect to reset password page
+    if (type === 'recovery') {
+      return NextResponse.redirect(`${origin}/reset-password`);
     }
 
     // Check if this is a new user that needs onboarding
