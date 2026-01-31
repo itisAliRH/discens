@@ -111,6 +111,26 @@ body {
   min-height: 100dvh;
 }
 
+/* ===== Clickable Elements ===== */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+label[for],
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+a[aria-disabled="true"],
+[role="button"][aria-disabled="true"],
+input:disabled {
+  cursor: not-allowed;
+}
+
 /* ===== Scrollbar Styling ===== */
 ::-webkit-scrollbar {
   width: 8px;
