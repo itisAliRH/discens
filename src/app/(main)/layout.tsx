@@ -31,10 +31,13 @@ export default function MainLayout({
             <NavLink href="/memory" icon="🧠" label="Memory" />
           </nav>
 
-          {/* User menu placeholder */}
-          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+          {/* User menu */}
+          <Link
+            href="/profile"
+            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-colors"
+          >
             <span className="text-xs">👤</span>
-          </div>
+          </Link>
         </div>
       </header>
 
