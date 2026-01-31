@@ -310,6 +310,25 @@ export default function ConversationPage() {
     return mapping[scenarioId] || 'none';
   }
 
+  function getEnvironmentContext(environment: EnvironmentType): string {
+    const contexts: Record<EnvironmentType, string> = {
+      cafe: 'You are in a cozy café. There\'s soft background music, the smell of fresh coffee, and the gentle hum of other customers chatting.',
+      office: 'You are in a modern office environment. There\'s the sound of keyboards typing and occasional phone calls in the background.',
+      restaurant: 'You are in a restaurant. There\'s the clinking of dishes, quiet conversations, and occasional kitchen sounds.',
+      hospital: 'You are in a medical clinic. The environment is calm and professional with quiet hallways.',
+      street: 'You are on a city street. There\'s traffic noise, pedestrians walking by, and typical urban sounds.',
+      train_station: 'You are at a train station. There are announcements over the speakers, trains arriving and departing, and travelers with luggage.',
+      airport: 'You are at an airport. There are flight announcements, rolling luggage, and the bustle of travelers.',
+      park: 'You are in a peaceful park. Birds are singing, there\'s a gentle breeze, and people are enjoying the outdoors.',
+      home: 'You are in a comfortable home setting. It\'s quiet and relaxed.',
+      supermarket: 'You are in a supermarket. There are shopping carts, beeping registers, and occasional announcements.',
+      library: 'You are in a quiet library. People speak in whispers and there\'s the soft sound of pages turning.',
+      none: 'The environment is neutral.',
+    };
+    
+    return contexts[environment] || contexts.none;
+  }
+
   // ===== Conversation Functions =====
 
   const continueConversation = useCallback(() => {
@@ -359,6 +378,62 @@ export default function ConversationPage() {
     return null;
   }, [inputMode]);
 
+  // Build ElevenLabs prompt based on scenario
+  const buildElevenLabsPrompt = useCallback((scenario: Scenario, environment: EnvironmentType): string => {
+    const environmentContext = getEnvironmentContext(environment);
+    
+    return `You are a language learning conversation partner helping someone practice German. Their native language is English.
+
+## Your Role
+You are playing a character in this scenario: "${scenario.name}"
+${scenario.description}
+
+## Environment
+${environmentContext}
+
+## Guidelines
+1. ALWAYS speak in German - this is a language learning exercise
+2. Speak naturally as your character would in this situation
+3. Use vocabulary and phrases appropriate for the scenario
+4. Keep responses conversational and realistic (2-4 sentences typically)
+5. If the learner makes mistakes, continue the conversation naturally - don't correct them mid-conversation
+6. Adjust your language complexity based on how the learner responds
+7. Stay in character throughout the conversation
+8. Use common phrases and expressions a native speaker would use in this situation
+
+## Important
+- Be patient and encouraging
+- If the learner seems stuck, gently guide them with questions
+- Make the conversation feel authentic and immersive
+- Remember: you're helping them practice real-world German communication`;
+  }, []);
+
+  // Build first message based on scenario
+  const buildFirstMessage = useCallback((scenario: Scenario): string => {
+    const scenarioLower = scenario.name.toLowerCase();
+    
+    if (scenarioLower.includes('cafe') || scenarioLower.includes('coffee')) {
+      return 'Guten Tag! Willkommen im Café. Was darf es sein?';
+    }
+    if (scenarioLower.includes('doctor') || scenarioLower.includes('health')) {
+      return 'Guten Tag, ich bin Dr. Müller. Was führt Sie heute zu mir?';
+    }
+    if (scenarioLower.includes('shop') || scenarioLower.includes('store')) {
+      return 'Guten Tag! Kann ich Ihnen helfen?';
+    }
+    if (scenarioLower.includes('restaurant')) {
+      return 'Guten Abend! Herzlich willkommen. Haben Sie reserviert?';
+    }
+    if (scenarioLower.includes('landlord') || scenarioLower.includes('apartment')) {
+      return 'Hallo! Schön, dass Sie sich für die Wohnung interessieren. Kommen Sie herein!';
+    }
+    if (scenarioLower.includes('work') || scenarioLower.includes('office') || scenarioLower.includes('colleague')) {
+      return 'Hallo! Wie geht es dir heute? Hast du schon von dem neuen Projekt gehört?';
+    }
+    // Default German greeting
+    return 'Guten Tag! Wie kann ich Ihnen helfen?';
+  }, []);
+
   // Start conversation with ElevenLabs or text mode
   const startConversation = useCallback(async (scenario: Scenario) => {
     setSelectedScenario(scenario);
@@ -376,26 +451,75 @@ export default function ConversationPage() {
     }
 
     if (inputMode === 'elevenlabs') {
-      // Start ElevenLabs conversation
+      // Start ElevenLabs conversation with proper overrides
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
         const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
+        
         if (agentId) {
+          // Build scenario-specific prompt and first message
+          const customPrompt = buildElevenLabsPrompt(scenario, environment);
+          const firstMessage = buildFirstMessage(scenario);
+          
           await elevenLabsConversation.startSession({
             agentId,
             connectionType: 'websocket',
-            dynamicVariables: {
-              scenario: scenario.name,
-              description: scenario.description,
-              environment: environment,
-              language: 'German',
+            overrides: {
+              agent: {
+                prompt: {
+                  prompt: customPrompt,
+                },
+                firstMessage: firstMessage,
+                language: 'de',
+              },
             },
           });
+          
+          // Add the first message to our local state
+          setMessages([{ role: 'assistant', content: firstMessage }]);
+        } else {
+          console.error('ElevenLabs agent ID not configured');
+          setInputMode('text');
+          // Fall back to text mode
+          const response = await fetch('/api/conversation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              scenarioId: scenario.id,
+              messages: [],
+              isStart: true,
+              customDescription: scenario.id === 'custom' ? customScenario : undefined,
+              environment: environment,
+            }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setMessages([{ role: 'assistant', content: data.response }]);
+          }
         }
       } catch (error) {
         console.error('Failed to start ElevenLabs conversation:', error);
         // Fall back to text mode
         setInputMode('text');
+        try {
+          const response = await fetch('/api/conversation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              scenarioId: scenario.id,
+              messages: [],
+              isStart: true,
+              customDescription: scenario.id === 'custom' ? customScenario : undefined,
+              environment: environment,
+            }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setMessages([{ role: 'assistant', content: data.response }]);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback to text mode also failed:', fallbackError);
+        }
       }
       setIsLoading(false);
     } else {
@@ -423,7 +547,7 @@ export default function ConversationPage() {
         setIsLoading(false);
       }
     }
-  }, [customScenario, inputMode, customEnvironment, elevenLabsConversation, createSession, router]);
+  }, [customScenario, inputMode, customEnvironment, elevenLabsConversation, createSession, router, buildElevenLabsPrompt, buildFirstMessage]);
 
   const startCustomScenario = useCallback(() => {
     if (!customScenario.trim()) return;
