@@ -1,13 +1,18 @@
-import { locales } from '@/i18n/config';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 
-export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
-}
+export default async function LocaleHomePage() {
+  const supabase = await createClient();
+  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export default function LocaleLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return children;
+  // If user is logged in, redirect to dashboard
+  if (user) {
+    redirect('/dashboard');
+  }
+
+  // Otherwise redirect to login
+  redirect('/login');
 }
