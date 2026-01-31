@@ -56,23 +56,40 @@
       "signUpSuccess": "Überprüfen Sie Ihre E-Mails für einen Bestätigungslink!"
     },
     "forgotPassword": {
-      "title": "Passwort zurücksetzen",
-      "subtitle": "Geben Sie Ihre E-Mail ein, um einen Link zum Zurücksetzen zu erhalten",
-      "email": "E-Mail",
-      "sendLink": "Link senden",
+      "title": "Passwort vergessen?",
+      "subtitle": "Keine Sorge, wir senden Ihnen Anweisungen zum Zurücksetzen",
+      "checkEmail": "Überprüfen Sie Ihre E-Mails für Anweisungen zum Zurücksetzen",
+      "email": "E-Mail-Adresse",
+      "sendButton": "Anweisungen senden",
+      "sending": "Wird gesendet...",
+      "success": "Anweisungen zum Zurücksetzen wurden an Ihre E-Mail gesendet.",
+      "error": "Ein Fehler ist aufgetreten",
+      "emailSentMessage": "Wenn ein Konto existiert mit",
+      "didntReceive": "E-Mail nicht erhalten? Überprüfen Sie Ihren Spam-Ordner oder",
+      "tryAgain": "versuchen Sie es erneut",
       "backToLogin": "Zurück zur Anmeldung",
-      "success": "Überprüfen Sie Ihre E-Mails für den Link",
-      "error": "Fehler beim Senden des Links"
+      "backToLoginButton": "Zurück zur Anmeldung"
     },
     "resetPassword": {
       "title": "Neues Passwort festlegen",
-      "subtitle": "Geben Sie Ihr neues Passwort ein",
+      "subtitle": "Wählen Sie ein sicheres Passwort für Ihr Konto",
       "password": "Neues Passwort",
       "confirmPassword": "Passwort bestätigen",
       "resetButton": "Passwort zurücksetzen",
-      "success": "Passwort erfolgreich zurückgesetzt",
-      "error": "Fehler beim Zurücksetzen des Passworts",
-      "passwordMismatch": "Passwörter stimmen nicht überein"
+      "updating": "Passwort wird aktualisiert...",
+      "success": "Passwort erfolgreich aktualisiert! Weiterleitung zur Anmeldung...",
+      "error": "Ein Fehler ist aufgetreten",
+      "invalidLink": "Ungültiger oder abgelaufener Zurücksetzungslink. Bitte fordern Sie einen neuen an.",
+      "invalidTitle": "Ungültiger Zurücksetzungslink",
+      "invalidSubtitle": "Dieser Zurücksetzungslink ist ungültig oder abgelaufen.",
+      "requestNew": "Neuen Link anfordern",
+      "backToLogin": "Zurück zur Anmeldung",
+      "backToLoginLink": "Zurück zur Anmeldung",
+      "rememberPassword": "Passwort erinnert?",
+      "verifying": "Zurücksetzungslink wird überprüft...",
+      "requirementsTitle": "Passwortanforderungen:",
+      "requirement1": "Mindestens 6 Zeichen",
+      "requirement2": "Passwörter stimmen überein"
     }
   },
   "dashboard": {

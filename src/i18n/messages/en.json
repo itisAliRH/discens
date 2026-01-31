@@ -56,23 +56,40 @@
       "signUpSuccess": "Check your email for a confirmation link!"
     },
     "forgotPassword": {
-      "title": "Reset Password",
-      "subtitle": "Enter your email to receive a password reset link",
-      "email": "Email",
-      "sendLink": "Send Reset Link",
+      "title": "Forgot Password?",
+      "subtitle": "No worries, we'll send you reset instructions",
+      "checkEmail": "Check your email for reset instructions",
+      "email": "Email Address",
+      "sendButton": "Send Reset Instructions",
+      "sending": "Sending...",
+      "success": "Password reset instructions have been sent to your email.",
+      "error": "An error occurred",
+      "emailSentMessage": "If an account exists with",
+      "didntReceive": "Didn't receive the email? Check your spam folder or",
+      "tryAgain": "try again",
       "backToLogin": "Back to login",
-      "success": "Check your email for a password reset link",
-      "error": "Failed to send reset link"
+      "backToLoginButton": "Back to Login"
     },
     "resetPassword": {
       "title": "Set New Password",
-      "subtitle": "Enter your new password",
+      "subtitle": "Choose a strong password for your account",
       "password": "New Password",
       "confirmPassword": "Confirm Password",
       "resetButton": "Reset Password",
-      "success": "Password reset successfully",
-      "error": "Failed to reset password",
-      "passwordMismatch": "Passwords don't match"
+      "updating": "Updating Password...",
+      "success": "Password updated successfully! Redirecting to login...",
+      "error": "An error occurred",
+      "invalidLink": "Invalid or expired reset link. Please request a new one.",
+      "invalidTitle": "Invalid Reset Link",
+      "invalidSubtitle": "This password reset link is invalid or has expired.",
+      "requestNew": "Request New Link",
+      "backToLogin": "Back to Login",
+      "backToLoginLink": "Back to Login",
+      "rememberPassword": "Remember your password?",
+      "verifying": "Verifying reset link...",
+      "requirementsTitle": "Password requirements:",
+      "requirement1": "At least 6 characters",
+      "requirement2": "Passwords match"
     }
   },
   "dashboard": {

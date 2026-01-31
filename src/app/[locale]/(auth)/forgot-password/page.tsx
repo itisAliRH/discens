@@ -2,11 +2,13 @@
 
 import { useSupabase } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { useState, Suspense, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import { LuArrowLeft, LuMail } from 'react-icons/lu';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 function ForgotPasswordForm() {
+  const t = useTranslations('auth.forgotPassword');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -31,12 +33,12 @@ function ForgotPasswordForm() {
       setEmailSent(true);
       setMessage({
         type: 'success',
-        text: 'Password reset instructions have been sent to your email.',
+        text: t('success'),
       });
     } catch (err) {
       setMessage({
         type: 'error',
-        text: err instanceof Error ? err.message : 'An error occurred',
+        text: err instanceof Error ? err.message : t('error'),
       });
     } finally {
       setIsLoading(false);
@@ -65,7 +67,7 @@ function ForgotPasswordForm() {
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <LuArrowLeft className="w-4 h-4" />
-          Back to login
+          {t('backToLogin')}
         </Link>
 
         {/* Logo */}
@@ -73,11 +75,9 @@ function ForgotPasswordForm() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4">
             D
           </div>
-          <h1 className="text-2xl font-bold">Forgot Password?</h1>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className="text-muted-foreground mt-1">
-            {emailSent
-              ? 'Check your email for reset instructions'
-              : "No worries, we'll send you reset instructions"}
+            {emailSent ? t('checkEmail') : t('subtitle')}
           </p>
         </div>
 
@@ -106,12 +106,12 @@ function ForgotPasswordForm() {
             <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20">
               <LuMail className="w-12 h-12 text-primary mx-auto mb-4" />
               <p className="text-muted-foreground text-sm">
-                If an account exists with <strong className="text-foreground">{email}</strong>, you will receive password reset instructions.
+                {t('emailSentMessage')} <strong className="text-foreground">{email}</strong>
               </p>
             </div>
 
             <p className="text-sm text-muted-foreground">
-              Didn't receive the email? Check your spam folder or{' '}
+              {t('didntReceive')}{' '}
               <button
                 onClick={() => {
                   setEmailSent(false);
@@ -119,7 +119,7 @@ function ForgotPasswordForm() {
                 }}
                 className="text-primary hover:underline font-medium"
               >
-                try again
+                {t('tryAgain')}
               </button>
             </p>
 
@@ -127,14 +127,14 @@ function ForgotPasswordForm() {
               href="/login"
               className="inline-block px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
             >
-              Back to Login
+              {t('backToLoginButton')}
             </Link>
           </motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-2">
-                Email Address
+                {t('email')}
               </label>
               <input
                 id="email"
@@ -158,10 +158,10 @@ function ForgotPasswordForm() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Sending...
+                  {t('sending')}
                 </span>
               ) : (
-                'Send Reset Instructions'
+                t('sendButton')
               )}
             </motion.button>
           </form>

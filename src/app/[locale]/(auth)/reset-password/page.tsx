@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useState, Suspense, useEffect } from 'react';
 import { LuEye, LuEyeOff, LuCheck, LuX } from 'react-icons/lu';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 function ResetPasswordForm() {
+  const t = useTranslations('auth.resetPassword');
   const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,7 +32,7 @@ function ResetPasswordForm() {
         setIsValidToken(false);
         setMessage({
           type: 'error',
-          text: 'Invalid or expired reset link. Please request a new one.',
+          text: t('invalidLink'),
         });
       } else {
         setIsValidToken(true);
@@ -38,12 +40,12 @@ function ResetPasswordForm() {
     }
 
     checkSession();
-  }, [supabase]);
+  }, [supabase, t]);
 
   // Password validation
   const passwordRequirements = [
-    { label: 'At least 6 characters', test: (pwd: string) => pwd.length >= 6 },
-    { label: 'Passwords match', test: (pwd: string) => pwd === confirmPassword && confirmPassword.length > 0 },
+    { label: t('requirement1'), test: (pwd: string) => pwd.length >= 6 },
+    { label: t('requirement2'), test: (pwd: string) => pwd === confirmPassword && confirmPassword.length > 0 },
   ];
 
   const isPasswordValid = passwordRequirements.every(req => req.test(password));
@@ -64,7 +66,7 @@ function ResetPasswordForm() {
 
       setMessage({
         type: 'success',
-        text: 'Password updated successfully! Redirecting to login...',
+        text: t('success'),
       });
 
       // Redirect to login after 2 seconds
@@ -74,7 +76,7 @@ function ResetPasswordForm() {
     } catch (err) {
       setMessage({
         type: 'error',
-        text: err instanceof Error ? err.message : 'An error occurred',
+        text: err instanceof Error ? err.message : t('error'),
       });
       setIsLoading(false);
     }
@@ -93,7 +95,7 @@ function ResetPasswordForm() {
       <main className="min-h-dvh flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">Verifying reset link...</p>
+          <p className="text-muted-foreground">{t('verifying')}</p>
         </div>
       </main>
     );
@@ -110,22 +112,22 @@ function ResetPasswordForm() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-500/10 text-red-600 text-2xl font-bold mb-4">
             <LuX className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">Invalid Reset Link</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('invalidTitle')}</h1>
           <p className="text-muted-foreground mb-6">
-            This password reset link is invalid or has expired.
+            {t('invalidSubtitle')}
           </p>
           <div className="space-y-3">
             <Link
               href="/forgot-password"
               className="block px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
             >
-              Request New Link
+              {t('requestNew')}
             </Link>
             <Link
               href="/login"
               className="block px-6 py-3 rounded-xl border border-border hover:bg-accent transition-colors"
             >
-              Back to Login
+              {t('backToLogin')}
             </Link>
           </div>
         </motion.div>
@@ -146,9 +148,9 @@ function ResetPasswordForm() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4">
             D
           </div>
-          <h1 className="text-2xl font-bold">Set New Password</h1>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Choose a strong password for your account
+            {t('subtitle')}
           </p>
         </div>
 
@@ -171,7 +173,7 @@ function ResetPasswordForm() {
           {/* New Password */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium mb-2">
-              New Password
+              {t('password')}
             </label>
             <div className="relative">
               <input
@@ -198,7 +200,7 @@ function ResetPasswordForm() {
           {/* Confirm Password */}
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-              Confirm Password
+              {t('confirmPassword')}
             </label>
             <div className="relative">
               <input
@@ -228,7 +230,7 @@ function ResetPasswordForm() {
               animate={{ opacity: 1, height: 'auto' }}
               className="space-y-2 p-4 rounded-xl bg-muted/50"
             >
-              <p className="text-sm font-medium">Password requirements:</p>
+              <p className="text-sm font-medium">{t('requirementsTitle')}</p>
               {passwordRequirements.map((req, index) => {
                 const isValid = req.test(password);
                 return (
@@ -260,18 +262,18 @@ function ResetPasswordForm() {
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Updating Password...
+                {t('updating')}
               </span>
             ) : (
-              'Reset Password'
+              t('resetButton')
             )}
           </motion.button>
         </form>
 
         <p className="text-center mt-6 text-sm text-muted-foreground">
-          Remember your password?{' '}
+          {t('rememberPassword')}{' '}
           <Link href="/login" className="text-primary hover:underline font-medium">
-            Back to Login
+            {t('backToLoginLink')}
           </Link>
         </p>
       </motion.div>
