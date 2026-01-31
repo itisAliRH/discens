@@ -9,6 +9,7 @@ import {
   LuUser,
 } from 'react-icons/lu';
 import LanguageSelector from '@/components/ui/LanguageSelector';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 /**
  * Main app layout with navigation
@@ -42,8 +43,9 @@ export default function MainLayout({
             <NavLink href="/memory" icon={<LuBrain />} label="Memory" />
           </nav>
 
-          {/* Right side: Language selector + User menu */}
+          {/* Right side: Theme toggle + Language selector + User menu */}
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <LanguageSelector />
             <Link
               href="/profile"
