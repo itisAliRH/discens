@@ -6,21 +6,35 @@ import { NextResponse } from 'next/server';
  * Fetch cards that are due for review
  */
 export async function GET() {
+  // #region agent log
+  const fs = await import('fs');
+  const logLine = (msg: string, data: Record<string, unknown>) => {
+    try { fs.appendFileSync('/Users/alireza/Documents/GitHub/discens/.cursor/debug.log', JSON.stringify({location:'api/review/cards',message:msg,data,timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})+'\n'); } catch {}
+  };
+  logLine('Review cards API called', {});
+  // #endregion
   try {
     const supabase = await createUntypedServerClient();
     
     // Check authentication
     const { data: { user } } = await supabase.auth.getUser();
+    // #region agent log
+    logLine('Auth check', {hasUser: !!user, userId: user?.id});
+    // #endregion
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user's memory
-    const { data: memory } = await supabase
+    const { data: memory, error: memoryError } = await supabase
       .from('memories')
       .select('id')
       .eq('user_id', user.id)
       .single();
+
+    // #region agent log
+    logLine('Memory fetch', {hasMemory: !!memory, memoryError: memoryError?.message});
+    // #endregion
 
     if (!memory) {
       return NextResponse.json({ error: 'Memory not found' }, { status: 404 });

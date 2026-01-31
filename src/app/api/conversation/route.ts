@@ -56,15 +56,34 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { scenarioId, messages, isStart } = body as {
-      scenarioId: keyof typeof SCENARIOS;
+    const { scenarioId, messages, isStart, customDescription } = body as {
+      scenarioId: string;
       messages: Array<{ role: 'user' | 'assistant'; content: string }>;
       isStart?: boolean;
+      customDescription?: string;
     };
 
-    const scenario = SCENARIOS[scenarioId];
-    if (!scenario) {
-      return NextResponse.json({ error: 'Invalid scenario' }, { status: 400 });
+    // Handle custom scenarios
+    let scenario: typeof SCENARIOS[keyof typeof SCENARIOS] | null = null;
+    let scenarioName = '';
+    let aiRole = '';
+    let userGoal = '';
+    let vocabulary: string[] = [];
+
+    if (scenarioId === 'custom' && customDescription) {
+      scenarioName = 'Custom Scenario';
+      aiRole = 'a helpful conversation partner in the described situation';
+      userGoal = customDescription;
+      vocabulary = [];
+    } else {
+      scenario = SCENARIOS[scenarioId as keyof typeof SCENARIOS];
+      if (!scenario) {
+        return NextResponse.json({ error: 'Invalid scenario' }, { status: 400 });
+      }
+      scenarioName = scenario.name;
+      aiRole = scenario.aiRole;
+      userGoal = scenario.userGoal;
+      vocabulary = scenario.vocabulary;
     }
 
     // Get user profile
@@ -78,7 +97,7 @@ export async function POST(request: Request) {
     const languageName = targetLanguage === 'de' ? 'German' : 'English';
 
     // Build system prompt
-    const systemPrompt = `You are ${scenario.aiRole} in a language learning conversation scenario.
+    const systemPrompt = `You are ${aiRole} in a language learning conversation scenario.
 
 Rules:
 1. Speak primarily in ${languageName}, keeping it simple and clear
@@ -89,11 +108,11 @@ Rules:
 6. Use vocabulary appropriate for intermediate learners
 7. If the user responds in English, gently encourage them to try in ${languageName}
 
-Scenario: "${scenario.name}"
-User's goal: ${scenario.userGoal}
-Helpful vocabulary: ${scenario.vocabulary.join(', ')}
+Scenario: "${scenarioName}"
+User's goal/situation: ${userGoal}
+${vocabulary.length > 0 ? `Helpful vocabulary: ${vocabulary.join(', ')}` : ''}
 
-${isStart ? `Start the conversation naturally as ${scenario.aiRole}. Greet the customer/visitor.` : ''}`;
+${isStart ? `Start the conversation naturally in the described situation. Greet the user and set the scene.` : ''}`;
 
     // Generate response
     const completion = await openai.chat.completions.create({
@@ -114,9 +133,9 @@ ${isStart ? `Start the conversation naturally as ${scenario.aiRole}. Greet the c
     return NextResponse.json({
       response: aiResponse,
       scenario: {
-        name: scenario.name,
-        description: scenario.description,
-        vocabulary: scenario.vocabulary,
+        name: scenarioName,
+        description: scenario?.description || customDescription || '',
+        vocabulary: vocabulary,
       },
     });
   } catch (error) {

@@ -19,11 +19,21 @@ interface QuizMaterial {
 }
 
 export async function POST(request: Request) {
+  // #region agent log
+  const fs = await import('fs');
+  const logLine = (msg: string, data: Record<string, unknown>) => {
+    try { fs.appendFileSync('/Users/alireza/Documents/GitHub/discens/.cursor/debug.log', JSON.stringify({location:'api/quiz/generate',message:msg,data,timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})+'\n'); } catch {}
+  };
+  logLine('Quiz generate API called', {});
+  // #endregion
   try {
     const supabase = await createUntypedServerClient();
     
     // Check authentication
     const { data: { user } } = await supabase.auth.getUser();
+    // #region agent log
+    logLine('Auth check', {hasUser: !!user, userId: user?.id});
+    // #endregion
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -43,22 +53,30 @@ export async function POST(request: Request) {
     };
 
     // Get user profile
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('target_language, native_language')
       .eq('id', user.id)
       .single();
+
+    // #region agent log
+    logLine('Profile fetch', {hasProfile: !!profile, profileError: profileError?.message});
+    // #endregion
 
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
     // Get memory ID
-    const { data: memory } = await supabase
+    const { data: memory, error: memoryError } = await supabase
       .from('memories')
       .select('id')
       .eq('user_id', user.id)
       .single();
+
+    // #region agent log
+    logLine('Memory fetch', {hasMemory: !!memory, memoryError: memoryError?.message});
+    // #endregion
 
     if (!memory) {
       return NextResponse.json({ error: 'Memory not found' }, { status: 404 });
