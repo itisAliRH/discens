@@ -1,15 +1,16 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        // Google OAuth profile images
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
       {
-        // Supabase Storage (user uploaded avatars)
         protocol: 'https',
         hostname: '*.supabase.co',
       },
@@ -17,4 +18,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
