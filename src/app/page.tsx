@@ -1,12 +1,8 @@
 'use client';
 
-// Force dynamic rendering to prevent build-time prerendering
-// This page requires Supabase client which needs runtime env vars
-export const dynamic = 'force-dynamic';
-
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useSupabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import {
@@ -23,15 +19,17 @@ import {
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useSupabase();
 
   useEffect(() => {
+    if (!supabase) return;
+    
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase!.auth.getUser();
       setIsLoggedIn(!!user);
     }
     checkAuth();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   const handleGetStarted = () => {
     if (isLoggedIn) {

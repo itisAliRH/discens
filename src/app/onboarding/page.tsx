@@ -1,12 +1,8 @@
 'use client';
 
-// Force dynamic rendering to prevent build-time prerendering
-// This page requires Supabase client which needs runtime env vars
-export const dynamic = 'force-dynamic';
-
-import { createUntypedClient } from '@/lib/supabase/client-untyped';
+import { useUntypedSupabase } from '@/lib/supabase/client-untyped';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { LanguageCode, MaterialCategory } from '@/types/database';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -81,7 +77,7 @@ const CATEGORIES: { id: MaterialCategory; name: string; icon: ReactNode }[] = [
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const supabase = createUntypedClient();
+  const supabase = useUntypedSupabase();
   
   const [step, setStep] = useState<OnboardingStep>('language');
   const [targetLanguage, setTargetLanguage] = useState<LanguageCode | null>(null);
@@ -95,13 +91,15 @@ export default function OnboardingPage() {
 
   // Check auth status on mount
   useEffect(() => {
+    if (!supabase) return;
+    
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase!.auth.getUser();
       setIsLoggedIn(!!user);
       
       // If logged in and has completed onboarding, redirect to dashboard
       if (user) {
-        const { data: memory } = await supabase
+        const { data: memory } = await supabase!
           .from('memories')
           .select('summary')
           .eq('user_id', user.id)
@@ -154,9 +152,8 @@ export default function OnboardingPage() {
     });
   };
 
-  const handleComplete = async () => {
-    if (!targetLanguage) return;
-    
+  const handleComplete = useCallback(async () => {
+    if (!targetLanguage || !supabase) return;
     
     // Check if user is logged in
     const { data: { user } } = await supabase.auth.getUser();
@@ -204,7 +201,7 @@ export default function OnboardingPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [targetLanguage, supabase, description, selectedCategories, selectedMethod, router]);
 
   // Load preferences from localStorage on mount (for users returning after login)
   const [shouldAutoComplete, setShouldAutoComplete] = useState(false);

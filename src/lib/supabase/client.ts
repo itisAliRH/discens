@@ -1,6 +1,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import { useMemo } from 'react';
 
 // Singleton client instance for browser
 let client: SupabaseClient<Database> | null = null;
@@ -8,9 +9,14 @@ let client: SupabaseClient<Database> | null = null;
 /**
  * Creates a Supabase client for use in the browser (Client Components)
  * This client is used for authentication and real-time subscriptions
- * Returns null during build time when env vars are not available
+ * Safe to call during SSR - will return null if not in browser
  */
-export function createClient(): SupabaseClient<Database> {
+export function createClient(): SupabaseClient<Database> | null {
+  // Only create client in browser environment
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   // Return existing client if already created
   if (client) return client;
 
@@ -18,13 +24,19 @@ export function createClient(): SupabaseClient<Database> {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // During build time, env vars might not be available
-  // Throw a clear error that can be caught by components
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Supabase client requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables'
-    );
+    console.warn('Supabase client: missing environment variables');
+    return null;
   }
 
   client = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
   return client;
+}
+
+/**
+ * React hook to get Supabase client safely in client components
+ * Returns null during SSR, actual client after hydration
+ */
+export function useSupabase(): SupabaseClient<Database> | null {
+  return useMemo(() => createClient(), []);
 }

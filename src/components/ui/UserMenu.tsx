@@ -4,21 +4,23 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LuUser, LuSettings, LuLogOut, LuChevronDown } from 'react-icons/lu';
-import { createUntypedClient } from '@/lib/supabase/client-untyped';
+import { useUntypedSupabase } from '@/lib/supabase/client-untyped';
 
 export default function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const supabase = createUntypedClient();
+  const supabase = useUntypedSupabase();
 
   // Load user name
   useEffect(() => {
+    if (!supabase) return;
+    
     async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase!.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile } = await supabase!
           .from('profiles')
           .select('full_name, email')
           .eq('id', user.id)
@@ -31,6 +33,8 @@ export default function UserMenu() {
   }, [supabase]);
 
   const handleLogout = async () => {
+    if (!supabase) return;
+    
     setIsLoading(true);
     try {
       await supabase.auth.signOut();

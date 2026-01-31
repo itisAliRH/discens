@@ -1,10 +1,6 @@
 'use client';
 
-// Force dynamic rendering to prevent build-time prerendering
-// This page requires Supabase client which needs runtime env vars
-export const dynamic = 'force-dynamic';
-
-import { createClient } from '@/lib/supabase/client';
+import { useSupabase } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, Suspense, useEffect } from 'react';
@@ -24,15 +20,17 @@ function LoginForm() {
     error ? { type: 'error', text: error } : null
   );
 
-  const supabase = createClient();
+  const supabase = useSupabase();
 
   // Redirect if already logged in
   useEffect(() => {
+    if (!supabase) return;
+    
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase!.auth.getUser();
       if (user) {
         // Check if user needs onboarding
-        const { data: memoryData } = await supabase
+        const { data: memoryData } = await supabase!
           .from('memories')
           .select('summary')
           .eq('user_id', user.id)
@@ -50,8 +48,8 @@ function LoginForm() {
     checkAuth();
   }, [supabase, router]);
 
-  // Show loading while checking auth
-  if (isCheckingAuth) {
+  // Show loading while checking auth or supabase is not ready
+  if (isCheckingAuth || !supabase) {
     return (
       <main className="min-h-dvh flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -61,6 +59,8 @@ function LoginForm() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) return;
+    
     setIsLoading(true);
     setMessage(null);
 
@@ -102,6 +102,8 @@ function LoginForm() {
   };
 
   const handleOAuthLogin = async (provider: 'google' | 'apple') => {
+    if (!supabase) return;
+    
     setIsLoading(true);
     setMessage(null);
 
@@ -124,6 +126,8 @@ function LoginForm() {
   };
 
   const handleMagicLink = async () => {
+    if (!supabase) return;
+    
     if (!email) {
       setMessage({ type: 'error', text: 'Please enter your email address' });
       return;

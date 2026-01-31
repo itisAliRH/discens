@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { LuLanguages, LuCheck } from 'react-icons/lu';
-import { createUntypedClient } from '@/lib/supabase/client-untyped';
+import { useUntypedSupabase } from '@/lib/supabase/client-untyped';
 import type { LanguageCode } from '@/types/database';
 
 const LANGUAGES = [
@@ -14,14 +14,16 @@ export default function LanguageSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>('en');
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createUntypedClient();
+  const supabase = useUntypedSupabase();
 
   // Load current UI language from profile
   useEffect(() => {
+    if (!supabase) return;
+    
     async function loadLanguage() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase!.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile } = await supabase!
           .from('profiles')
           .select('ui_language')
           .eq('id', user.id)
@@ -36,7 +38,7 @@ export default function LanguageSelector() {
   }, [supabase]);
 
   const handleLanguageChange = async (language: LanguageCode) => {
-    if (language === currentLanguage || isLoading) return;
+    if (!supabase || language === currentLanguage || isLoading) return;
 
     setIsLoading(true);
     try {

@@ -1,9 +1,9 @@
 'use client';
 
-import { createUntypedClient } from '@/lib/supabase/client-untyped';
+import { useUntypedSupabase } from '@/lib/supabase/client-untyped';
 import type { Profile, Memory, Streak } from '@/types/database';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 
 /**
@@ -43,10 +43,13 @@ export function useAuth() {
     error: null,
   });
   const router = useRouter();
-  const supabase = createUntypedClient();
+  const supabase = useUntypedSupabase();
+  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
   // Fetch user data (profile, memory, streak)
   const fetchUserData = useCallback(async (userId: string) => {
+    if (!supabase) return { profile: null, memory: null, streak: null };
+    
     try {
       const [profileResult, memoryResult, streakResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
@@ -67,6 +70,8 @@ export function useAuth() {
 
   // Initialize auth state
   useEffect(() => {
+    if (!supabase) return;
+    
     const initAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -124,14 +129,18 @@ export function useAuth() {
         }
       }
     );
+    
+    subscriptionRef.current = subscription;
 
     return () => {
-      subscription.unsubscribe();
+      subscriptionRef.current?.unsubscribe();
     };
   }, [supabase, fetchUserData]);
 
   // Sign out
   const signOut = useCallback(async () => {
+    if (!supabase) return;
+    
     setState(prev => ({ ...prev, isLoading: true }));
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -152,7 +161,7 @@ export function useAuth() {
 
   // Update profile
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
-    if (!state.user) return { error: 'Not authenticated' };
+    if (!state.user || !supabase) return { error: 'Not authenticated' };
 
     const { data, error } = await supabase
       .from('profiles')
