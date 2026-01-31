@@ -21,7 +21,7 @@ const GeneratedWordSchema = z.object({
   partOfSpeech: z.string(),
   pluralForm: z.string().optional(),
   category: z.string(),
-  difficultyLevel: z.number().min(1).max(5),
+  difficultyLevel: z.coerce.number().min(1).max(5),
   cefrLevel: z.string(),
 });
 
@@ -34,7 +34,7 @@ const GeneratedGrammarSchema = z.object({
   })).min(1).max(3),
   level: z.string(),
   category: z.string(),
-  difficultyLevel: z.number().min(1).max(5),
+  difficultyLevel: z.coerce.number().min(1).max(5),
 });
 
 const MaterialBatchSchema = z.object({
@@ -45,7 +45,7 @@ const MaterialBatchSchema = z.object({
     usage: z.string(),
     examples: z.array(z.string()).min(1).max(2),
     category: z.string(),
-    difficultyLevel: z.number().min(1).max(5),
+    difficultyLevel: z.coerce.number().min(1).max(5),
     cefrLevel: z.string(),
   })).optional(),
   grammar: z.array(GeneratedGrammarSchema).optional(),
