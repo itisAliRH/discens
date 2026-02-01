@@ -49,6 +49,9 @@ export {
   LuLoader,
   LuTrendingUp,
   LuTrendingDown,
+  LuCircle,
+  LuSquare,
+  LuSquareCheck as LuCheckSquare,
 } from 'react-icons/lu';
 
 // Learning icons
