@@ -9,12 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.24",
     "@elevenlabs/elevenlabs-js": "^2.33.0",
     "@elevenlabs/react": "^0.13.1",
     "@langchain/core": "^1.1.18",
     "@langchain/openai": "^1.2.4",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",
+    "ai": "^6.0.66",
     "framer-motion": "^12.29.2",
     "next": "16.1.6",
     "next-intl": "^4.8.1",
