@@ -44,8 +44,8 @@ export default async function DashboardPage() {
   const memory = memoryResult.data as Memory | null;
   const streak = streakResult.data as Streak | null;
 
-  // Check if onboarding needed
-  if (memory && !memory.summary) {
+  // Check if onboarding needed - redirect if memory doesn't exist or has no summary
+  if (!memory || !memory.summary) {
     redirect('/onboarding');
   }
 

@@ -10,6 +10,9 @@ export async function GET() {
     const supabase = await createUntypedServerClient();
     
     const { data: { user } } = await supabase.auth.getUser();
+    // #region agent log
+    await fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/memory/route.ts:12',message:'User auth check',data:{hasUser:!!user,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -20,6 +23,10 @@ export async function GET() {
       .select('*')
       .eq('user_id', user.id)
       .single();
+    
+    // #region agent log
+    await fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/memory/route.ts:24',message:'Memory query result',data:{hasMemory:!!memory,error:memoryError?.message,errorCode:memoryError?.code},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D,E'})}).catch(()=>{});
+    // #endregion
 
     if (memoryError || !memory) {
       return NextResponse.json({ error: 'Memory not found' }, { status: 404 });
@@ -30,6 +37,10 @@ export async function GET() {
       .from('materials')
       .select('type, mastery_level, categories')
       .eq('memory_id', memory.id);
+    
+    // #region agent log
+    await fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/memory/route.ts:36',message:'Materials query result',data:{materialCount:materials?.length||0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
 
     // Calculate stats
     const stats = {
@@ -55,6 +66,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Memory fetch error:', error);
+    // #region agent log
+    await fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/memory/route.ts:58',message:'Exception in GET',data:{error:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
