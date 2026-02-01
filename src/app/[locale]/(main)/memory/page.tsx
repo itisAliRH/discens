@@ -34,7 +34,7 @@ interface Material {
     rule?: string;
     meaning?: string;
     explanation?: string;
-    examples?: string[];
+    examples?: string[] | Array<{ correct: string; incorrect?: string }>;
     article?: string;
     partOfSpeech?: string;
     synonyms?: string[];
@@ -681,7 +681,10 @@ function MaterialCard({ material, onEdit, onDelete }: {
           {/* Examples */}
           {material.content.examples && material.content.examples.length > 0 && (
             <div className="text-sm text-muted-foreground italic">
-              &quot;{material.content.examples[0]}&quot;
+              {typeof material.content.examples[0] === 'string' 
+                ? `"${material.content.examples[0]}"`
+                : `"${(material.content.examples[0] as { correct: string }).correct}"`
+              }
             </div>
           )}
 
