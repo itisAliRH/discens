@@ -140,7 +140,9 @@ export default function MemoryPage() {
   const [memory, setMemory] = useState<Memory | null>(null);
   const [stats, setStats] = useState<MemoryStats | null>(null);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [allMaterials, setAllMaterials] = useState<Material[]>([]); // Store all materials for client-side filtering
   const [isLoading, setIsLoading] = useState(true);
+  const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Filters
@@ -184,22 +186,71 @@ export default function MemoryPage() {
     }
   }, []);
 
+  // Client-side filtering function
+  const filterMaterials = useCallback((materialsToFilter: Material[]) => {
+    setIsFiltering(true);
+    
+    // Small delay to show loading state for better UX
+    setTimeout(() => {
+      let filtered = [...materialsToFilter];
+
+      // Apply search query filter (client-side)
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(material => {
+          // Search in word/phrase/rule
+          const mainText = (
+            material.content.word || 
+            material.content.phrase || 
+            material.content.rule || 
+            ''
+          ).toLowerCase();
+          
+          // Search in meaning/explanation
+          const meaning = (
+            material.content.meaning || 
+            material.content.explanation || 
+            ''
+          ).toLowerCase();
+          
+          // Search in examples
+          const examples = material.content.examples 
+            ? (Array.isArray(material.content.examples) 
+                ? material.content.examples.map((ex: string | { correct: string }) => 
+                    typeof ex === 'string' ? ex : ex.correct
+                  ).join(' ')
+                : '')
+            : '';
+          
+          return mainText.includes(query) || 
+                 meaning.includes(query) || 
+                 examples.toLowerCase().includes(query);
+        });
+      }
+
+      setMaterials(filtered);
+      setIsFiltering(false);
+    }, 100);
+  }, [searchQuery]);
+
   const loadMaterials = useCallback(async () => {
     try {
       const params = new URLSearchParams();
+      // Only use server-side filters for type and category, not search
       if (typeFilter !== 'all') params.set('type', typeFilter);
       if (categoryFilter !== 'all') params.set('category', categoryFilter);
-      if (searchQuery) params.set('search', searchQuery);
       
       const response = await fetch(`/api/memory/materials?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setMaterials(data.materials);
+        setAllMaterials(data.materials); // Store all materials
+        // Apply client-side filtering
+        filterMaterials(data.materials);
       }
     } catch (err) {
       console.error('Materials load error:', err);
     }
-  }, [typeFilter, categoryFilter, searchQuery]);
+  }, [typeFilter, categoryFilter, filterMaterials]);
 
   useEffect(() => {
     async function init() {
@@ -211,12 +262,19 @@ export default function MemoryPage() {
     init();
   }, [loadMemory, loadMaterials]);
 
-  // Reload materials when filters change
+  // Reload materials when type/category filters change (server-side)
   useEffect(() => {
     if (!isLoading) {
       loadMaterials();
     }
-  }, [typeFilter, categoryFilter, searchQuery, loadMaterials, isLoading]);
+  }, [typeFilter, categoryFilter, loadMaterials, isLoading]);
+
+  // Apply client-side search filter when search query changes
+  useEffect(() => {
+    if (!isLoading && allMaterials.length > 0) {
+      filterMaterials(allMaterials);
+    }
+  }, [searchQuery, allMaterials, isLoading, filterMaterials]);
 
   // ===== Actions =====
 
@@ -500,39 +558,60 @@ export default function MemoryPage() {
       </div>
 
       {/* Materials List */}
-      {materials.length === 0 ? (
+      {isFiltering ? (
+        <div className="text-center py-12">
+          <div className="relative inline-block">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+          <p className="text-muted-foreground mt-4">Filtering materials...</p>
+        </div>
+      ) : materials.length === 0 ? (
         <div className="text-center py-12 bg-card border border-border rounded-2xl">
           <span className="flex justify-center mb-4"><LuMailOpen className="w-12 h-12 text-muted-foreground" /></span>
-          <h2 className="text-xl font-semibold mb-2">No materials yet</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            {searchQuery.trim() ? 'No materials found' : 'No materials yet'}
+          </h2>
           <p className="text-muted-foreground mb-6">
-            Add your first word, phrase, or grammar rule!
+            {searchQuery.trim() 
+              ? `No materials match "${searchQuery}"`
+              : 'Add your first word, phrase, or grammar rule!'
+            }
           </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => setShowImportWizard(true)}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold flex items-center gap-2"
-            >
-              <span>📥</span> Import with AI
-            </button>
-            <button
-              onClick={() => setShowAddDialog(true)}
-              className="px-6 py-3 rounded-xl border border-border hover:bg-accent font-semibold"
-            >
-              Quick Add
-            </button>
-          </div>
+          {!searchQuery.trim() && (
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowImportWizard(true)}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold flex items-center gap-2"
+              >
+                <span>📥</span> Import with AI
+              </button>
+              <button
+                onClick={() => setShowAddDialog(true)}
+                className="px-6 py-3 rounded-xl border border-border hover:bg-accent font-semibold"
+              >
+                Quick Add
+              </button>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="grid gap-4">
-          {materials.map(material => (
-            <MaterialCard
-              key={material.id}
-              material={material}
-              onEdit={() => setEditingMaterial(material)}
-              onDelete={() => setDeletingMaterial(material)}
-            />
-          ))}
-        </div>
+        <>
+          {searchQuery.trim() && (
+            <div className="mb-4 text-sm text-muted-foreground">
+              Showing {materials.length} result{materials.length !== 1 ? 's' : ''} for &quot;{searchQuery}&quot;
+            </div>
+          )}
+          <div className="grid gap-4">
+            {materials.map(material => (
+              <MaterialCard
+                key={material.id}
+                material={material}
+                onEdit={() => setEditingMaterial(material)}
+                onDelete={() => setDeletingMaterial(material)}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {/* Add Material Dialog (Quick Add) */}
