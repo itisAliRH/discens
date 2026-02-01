@@ -22,7 +22,12 @@ export default async function proxy(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Otherwise, use the intl response
+  // Merge session cookies from Supabase into the intl response
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    intlResponse.cookies.set(cookie.name, cookie.value);
+  });
+
+  // Return the intl response with session cookies
   return intlResponse;
 }
 
