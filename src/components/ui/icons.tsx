@@ -74,6 +74,7 @@ export {
   LuLock,
   LuChartBar,
   LuBadgePlus,
+  LuCrown,
 } from 'react-icons/lu';
 
 // Content icons
@@ -132,6 +133,10 @@ export {
   LuGlobe,
   LuLanguages,
   LuArrowLeft,
+  LuArrowRight,
+  LuCreditCard,
+  LuBadgeCheck,
+  LuInfinity,
 } from 'react-icons/lu';
 
 // Emoji replacements (for specific use cases)
