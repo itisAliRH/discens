@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import type { QuizType } from '@/types/database';
+import QuizTypeSelector from '@/components/quiz/QuizTypeSelector';
 import {
   LuLock,
   LuFileText,
@@ -46,64 +48,145 @@ interface SessionState {
     xpEarned: number;
   }>;
   startTime: number;
+  sessionId: string;
+  materialIds: string[];
 }
+
+type ViewState = 'select' | 'review' | 'loading';
 
 export default function ReviewPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const [view, setView] = useState<ViewState>('select');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<'auth' | 'setup' | 'generic'>('generic');
   const [session, setSession] = useState<SessionState | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isRating, setIsRating] = useState(false);
+  const [selectedQuizTypes, setSelectedQuizTypes] = useState<QuizType[]>(['multiple_choice', 'fill_blank']);
 
-  // Fetch due cards
-  useEffect(() => {
-    async function loadCards() {
-      try {
-        const response = await fetch('/api/review/cards');
+  // Get conversation scenario ID from URL if present
+  const conversationScenarioId = searchParams.get('scenario');
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          
-          if (response.status === 401) {
-            setErrorType('auth');
-            setError('Please log in to access your reviews');
-          } else if (response.status === 404) {
-            setErrorType('setup');
-            setError('Complete your profile setup first');
-          } else {
-            setErrorType('generic');
-            setError(errorData.error || 'Failed to load review cards');
-          }
-          setIsLoading(false);
-          return;
-        }
-
-        const data = await response.json();
-        
-        if (!data.cards || data.cards.length === 0) {
-          setIsLoading(false);
-          return;
-        }
-
-        setSession({
-          cards: data.cards,
-          currentIndex: 0,
-          results: [],
-          startTime: Date.now(),
-        });
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Load cards error:', err);
-        setErrorType('generic');
-        setError(err instanceof Error ? err.message : 'Failed to load review cards');
-        setIsLoading(false);
-      }
+  // Start review session
+  const startSession = useCallback(async () => {
+    if (selectedQuizTypes.length === 0) {
+      setError('Please select at least one quiz type');
+      setErrorType('generic');
+      return;
     }
 
-    loadCards();
-  }, []);
+    setIsLoading(true);
+    setError(null);
+    setView('loading');
+
+    try {
+      // Create review session
+      const sessionResponse = await fetch('/api/learning-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionType: 'review',
+          quizTypes: selectedQuizTypes,
+          conversationScenarioId: conversationScenarioId || undefined,
+        }),
+      });
+
+      if (!sessionResponse.ok) {
+        const errorData = await sessionResponse.json().catch(() => ({}));
+        
+        if (sessionResponse.status === 401) {
+          setErrorType('auth');
+          setError('Please log in to access your reviews');
+        } else if (sessionResponse.status === 404) {
+          setErrorType('setup');
+          setError('Complete your profile setup first');
+        } else {
+          setErrorType('generic');
+          setError(errorData.error || 'Failed to create session');
+        }
+        setIsLoading(false);
+        setView('select');
+        return;
+      }
+
+      const sessionData = await sessionResponse.json();
+      const sessionId = sessionData.session.id;
+
+      // Generate quiz from existing materials (review mode)
+      const quizResponse = await fetch('/api/quiz/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          count: 5,
+          quizTypes: selectedQuizTypes,
+          isReview: true, // Review mode: use ONLY existing materials
+          sessionId,
+          conversationScenarioId: conversationScenarioId || undefined,
+          createNewMaterials: false,
+        }),
+      });
+
+      if (!quizResponse.ok) {
+        const errorData = await quizResponse.json().catch(() => ({}));
+        
+        if (quizResponse.status === 401) {
+          setErrorType('auth');
+          setError('Please log in to access your reviews');
+        } else if (quizResponse.status === 404) {
+          setErrorType('setup');
+          setError('Complete your profile setup first');
+        } else {
+          setErrorType('generic');
+          setError(errorData.error || 'Failed to generate review');
+        }
+        setIsLoading(false);
+        setView('select');
+        return;
+      }
+
+      // For review, we still use the review cards system
+      // But we can also generate quiz questions from existing materials
+      const cardsResponse = await fetch('/api/review/cards');
+
+      if (!cardsResponse.ok) {
+        const errorData = await cardsResponse.json().catch(() => ({}));
+        setErrorType('generic');
+        setError(errorData.error || 'Failed to load review cards');
+        setIsLoading(false);
+        setView('select');
+        return;
+      }
+
+      const cardsData = await cardsResponse.json();
+      
+      if (!cardsData.cards || cardsData.cards.length === 0) {
+        setIsLoading(false);
+        setView('select');
+        return;
+      }
+
+      const materialIds = cardsData.cards.map((c: ReviewCard) => c.material_id);
+
+      setSession({
+        cards: cardsData.cards,
+        currentIndex: 0,
+        results: [],
+        startTime: Date.now(),
+        sessionId,
+        materialIds,
+      });
+      setIsLoading(false);
+      setView('review');
+    } catch (err) {
+      console.error('Session start error:', err);
+      setErrorType('generic');
+      setError(err instanceof Error ? err.message : 'Failed to start session');
+      setIsLoading(false);
+      setView('select');
+    }
+  }, [selectedQuizTypes, conversationScenarioId]);
 
   // Handle rating
   const handleRate = useCallback(async (rating: 'again' | 'hard' | 'good' | 'easy') => {
@@ -151,15 +234,86 @@ export default function ReviewPage() {
 
   // Check if session is complete
   useEffect(() => {
-    if (session && session.currentIndex >= session.cards.length) {
-      // Calculate totals
-      const totalXP = session.results.reduce((sum, r) => sum + r.xpEarned, 0);
-      router.push(`/dashboard?reviewed=${session.results.length}&xp=${totalXP}`);
+    if (session && session.currentIndex >= session.cards.length && view === 'review') {
+      // Complete session
+      const completeSession = async () => {
+        const totalXP = session.results.reduce((sum, r) => sum + r.xpEarned, 0);
+        const correct = session.results.filter(r => r.rating === 'good' || r.rating === 'easy').length;
+        const incorrect = session.results.filter(r => r.rating === 'again' || r.rating === 'hard').length;
+        const duration = Math.floor((Date.now() - session.startTime) / 1000);
+
+        try {
+          // Update session with results
+          await fetch(`/api/learning-sessions/${session.sessionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              materialsCovered: session.materialIds,
+              correctCount: correct,
+              incorrectCount: incorrect,
+              skippedCount: 0,
+              durationSeconds: duration,
+              completed: true,
+            }),
+          });
+
+          // Update memory summary
+          await fetch('/api/memory/summary', {
+            method: 'POST',
+          });
+
+          router.push(`/dashboard?reviewed=${session.results.length}&xp=${totalXP}`);
+        } catch (err) {
+          console.error('Session completion error:', err);
+          // Still redirect even if update fails
+          router.push(`/dashboard?reviewed=${session.results.length}&xp=${totalXP}`);
+        }
+      };
+
+      completeSession();
     }
-  }, [session, router]);
+  }, [session, router, view]);
+
+  // Quiz type selection view
+  if (view === 'select') {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold mb-2">Start Review</h1>
+          <p className="text-muted-foreground">
+            Choose how you want to review. Questions will be generated from your existing vocabulary.
+          </p>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-8 mb-6">
+          <QuizTypeSelector
+            onSelect={setSelectedQuizTypes}
+            defaultTypes={selectedQuizTypes}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="px-6 py-3 rounded-xl border border-border hover:bg-accent"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={startSession}
+            disabled={isLoading || selectedQuizTypes.length === 0}
+            className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            Start Review
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || view === 'loading') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center">
@@ -228,7 +382,7 @@ export default function ReviewPage() {
   }
 
   // No cards to review
-  if (!session || session.cards.length === 0) {
+  if (!session || session.cards.length === 0 || view !== 'review') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center bg-card border border-border rounded-2xl p-8">
@@ -256,13 +410,13 @@ export default function ReviewPage() {
     );
   }
 
-  // Session complete
+  // Session complete (handled in useEffect)
   if (session.currentIndex >= session.cards.length) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center">
           <div className="animate-spin inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full mb-4" />
-          <p className="text-muted-foreground">Saving progress...</p>
+          <p className="text-muted-foreground">Saving progress and updating memory...</p>
         </div>
       </div>
     );
