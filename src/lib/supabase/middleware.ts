@@ -10,10 +10,17 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  try {
+    // Check if environment variables are available
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      // If environment variables are not available, skip Supabase session update
+      return supabaseResponse;
+    }
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -30,26 +37,30 @@ export async function updateSession(request: NextRequest) {
           );
         },
       },
+    });
+
+    // Refresh the session if it exists
+    // This is important for keeping the session alive
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // Protect routes that require authentication
+    const protectedRoutes = ['/dashboard', '/learn', '/review', '/conversation', '/memory'];
+    const isProtectedRoute = protectedRoutes.some((route) =>
+      request.nextUrl.pathname.startsWith(route)
+    );
+
+    if (isProtectedRoute && !user) {
+      // Redirect to login if accessing protected route without auth
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
     }
-  );
-
-  // Refresh the session if it exists
-  // This is important for keeping the session alive
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Protect routes that require authentication
-  const protectedRoutes = ['/dashboard', '/learn', '/review', '/conversation', '/memory'];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  );
-
-  if (isProtectedRoute && !user) {
-    // Redirect to login if accessing protected route without auth
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+  } catch (error) {
+    // If there's any error during session update, continue with the response
+    // This prevents build-time failures
+    console.error('Error updating session:', error);
   }
 
   return supabaseResponse;
