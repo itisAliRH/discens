@@ -51,6 +51,7 @@ export default function LearnPage() {
     score: number;
   } | null>(null);
   const [selectedQuizTypes, setSelectedQuizTypes] = useState<QuizType[]>(['multiple_choice', 'fill_blank']);
+  const [customLearningPrompt, setCustomLearningPrompt] = useState('');
 
   // Get conversation scenario ID from URL if present
   const conversationScenarioId = searchParams.get('scenario');
@@ -111,6 +112,7 @@ export default function LearnPage() {
           sessionId,
           conversationScenarioId: conversationScenarioId || undefined,
           createNewMaterials: true, // Create NEW materials for learn sessions
+          customLearningPrompt: customLearningPrompt.trim() || undefined, // Custom learning focus
         }),
       });
 
@@ -164,7 +166,7 @@ export default function LearnPage() {
       setIsLoading(false);
       setView('select');
     }
-  }, [selectedQuizTypes, conversationScenarioId]);
+  }, [selectedQuizTypes, conversationScenarioId, customLearningPrompt]);
 
   // Flatten quiz batch into array of questions
   function flattenQuestions(batch: QuizBatch): Question[] {
@@ -331,6 +333,24 @@ export default function LearnPage() {
             defaultTypes={selectedQuizTypes}
             disabled={isLoading}
           />
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-6 mb-6">
+          <label htmlFor="custom-prompt" className="block text-sm font-semibold mb-2">
+            What would you like to learn? <span className="text-muted-foreground font-normal">(Optional)</span>
+          </label>
+          <textarea
+            id="custom-prompt"
+            value={customLearningPrompt}
+            onChange={(e) => setCustomLearningPrompt(e.target.value)}
+            disabled={isLoading}
+            placeholder="e.g., I want to learn words about describing that my computer is broken and I want to ask to fix it in a store"
+            className="w-full min-h-[100px] p-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed resize-y"
+            maxLength={500}
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            Describe the specific topic, situation, or vocabulary you want to focus on. Leave blank for general learning materials.
+          </p>
         </div>
 
         <div className="flex justify-center gap-4">

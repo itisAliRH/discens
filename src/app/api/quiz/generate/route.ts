@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       sessionId,
       conversationScenarioId,
       createNewMaterials = false, // For learn sessions: create new materials
+      customLearningPrompt, // Custom learning focus from user
     } = body as {
       materialIds?: string[];
       quizTypes?: QuizType[];
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       sessionId?: string;
       conversationScenarioId?: string;
       createNewMaterials?: boolean;
+      customLearningPrompt?: string;
     };
 
     // Get user profile
@@ -112,6 +114,7 @@ export async function POST(request: Request) {
         cefrLevel: avgLevel as CEFRLevel,
         count: count * 2, // Generate more materials than questions
         memorySummary: memory.summary || '',
+        customPrompt: customLearningPrompt, // Pass custom learning focus
       });
 
       if (!generateResult.success || !generateResult.materials) {

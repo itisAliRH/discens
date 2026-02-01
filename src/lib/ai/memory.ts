@@ -71,6 +71,7 @@ interface GenerateMaterialsOptions {
   count: number;
   existingMaterialIds?: string[];
   memorySummary?: string;
+  customPrompt?: string;
 }
 
 /**
@@ -86,6 +87,7 @@ export async function generateMaterials(options: GenerateMaterialsOptions) {
     count,
     existingMaterialIds = [],
     memorySummary = '',
+    customPrompt = '',
   } = options;
 
   const languageName = targetLanguage === 'de' ? 'German' : 'English';
@@ -113,23 +115,26 @@ Your task is to generate high-quality learning materials at the ${cefrLevel} lev
 User's current learning summary:
 ${memorySummary || 'New learner, no prior context.'}
 
+${customPrompt ? `\nUSER'S SPECIFIC LEARNING FOCUS:\n${customPrompt}\n\nIMPORTANT: Prioritize generating materials directly related to this specific topic/situation. The vocabulary, phrases, and grammar should help the user communicate effectively in this context.` : ''}
+
 CRITICAL GUIDELINES:
 - Generate practical, everyday vocabulary and grammar
 - Include real-world usage examples
 - For German nouns: ALWAYS include articles (der/die/das)
 - Ensure difficulty matches the ${cefrLevel} level
-- Focus on the requested categories: ${categories.join(', ')}
+- Focus on the requested categories: ${categories.join(', ')}${customPrompt ? ' and the user\'s specific learning focus above' : ''}
 - difficultyLevel MUST be an integer from 1 to 5 (use ${baseDifficulty} as baseline for ${cefrLevel})
 - For nullable string fields (article, pronunciation, pluralForm, synonyms, incorrect), use null if not applicable
 - Avoid materials the user already knows`;
 
   const userPrompt = `Generate learning materials for ${languageName} at ${cefrLevel} level.
+${customPrompt ? `\nSpecific focus: ${customPrompt}\n` : ''}
 Focus on categories: ${categories.join(', ')}.
 
 Generate exactly:
-- ${wordCount} words (vocabulary)
-- ${phraseCount} phrases/expressions
-- ${grammarCount} grammar point(s)
+- ${wordCount} words (vocabulary)${customPrompt ? ' related to the user\'s specific focus' : ''}
+- ${phraseCount} phrases/expressions${customPrompt ? ' useful in the described situation' : ''}
+- ${grammarCount} grammar point(s)${customPrompt ? ' relevant to expressing the user\'s needs' : ''}
 
 Remember: difficultyLevel must be an integer between 1-5 (${baseDifficulty} is appropriate for ${cefrLevel}).`;
 
