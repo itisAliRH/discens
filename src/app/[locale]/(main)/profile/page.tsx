@@ -14,6 +14,8 @@ import {
   LuMedal,
   LuClock,
   LuEdit,
+  LuCrown,
+  LuArrowRight,
 } from '@/components/ui/icons';
 
 // Force dynamic rendering - this page requires authentication
@@ -65,6 +67,12 @@ export default async function ProfilePage() {
   const xpForNextLevel = Math.pow(level, 2) * 100;
   const xpProgress = ((xp - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel)) * 100;
 
+  // Mock current subscription (in a real app, fetch from database)
+  const currentSubscription = {
+    tier: 'free',
+    name: 'Free',
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
@@ -108,6 +116,38 @@ export default async function ProfilePage() {
             style={{ width: `${xpProgress}%` }}
           />
         </div>
+      </div>
+
+      {/* Subscription Card */}
+      <div className="mb-8">
+        <Link
+          href="/profile/billing"
+          className="block p-6 rounded-xl bg-gradient-to-br from-primary/10 to-card border-2 border-primary/30 hover:border-primary/50 transition-all group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                <LuCrown className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold text-lg mb-1">
+                  {currentSubscription.name} Plan
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {currentSubscription.tier === 'free' 
+                    ? 'Upgrade to unlock unlimited features'
+                    : 'Manage your subscription'}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-primary group-hover:translate-x-1 transition-transform">
+              <span className="text-sm font-medium">
+                {currentSubscription.tier === 'free' ? 'View Plans' : 'Manage'}
+              </span>
+              <LuArrowRight className="w-4 h-4" />
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Stats Grid */}
