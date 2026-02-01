@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { useSupabase } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { 
-  LuHome, 
+  LuHouse, 
   LuBookOpen, 
   LuRefreshCw, 
   LuMessageCircle, 
@@ -91,7 +91,7 @@ export default function Navbar() {
             {/* Desktop Navigation Links (only show when logged in) */}
             {isLoggedIn && isMainApp && (
               <div className="hidden md:flex items-center gap-1">
-                <NavLink href="/dashboard" label={t('dashboard')} icon={<LuHome className="w-4 h-4" />} />
+                <NavLink href="/dashboard" label={t('dashboard')} icon={<LuHouse className="w-4 h-4" />} />
                 <NavLink href="/learn" label={t('learn')} icon={<LuBookOpen className="w-4 h-4" />} />
                 <NavLink href="/review" label={t('review')} icon={<LuRefreshCw className="w-4 h-4" />} />
                 <NavLink href="/conversation" label="Talk" icon={<LuMessageCircle className="w-4 h-4" />} />
