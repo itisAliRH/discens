@@ -296,5 +296,132 @@
     "unauthorized": "You need to be logged in",
     "notFound": "Page not found",
     "serverError": "Server error. Please try again later"
+  },
+  "pricing": {
+    "title": "Choose Your Plan",
+    "subtitle": "Start free and upgrade as you grow. All plans include core learning features.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "save": "Save {percent}%",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "billedAnnually": "/mo when billed annually",
+    "free": "Free",
+    "currentPlan": "Current Plan",
+    "mostPopular": "Most Popular",
+    "getStarted": "Get Started",
+    "upgradeTo": "Upgrade to {plan}",
+    "studentDiscount": {
+      "title": "Student Discount Available!",
+      "subtitle": "Students with valid .edu email addresses are eligible for special pricing",
+      "plusDeal": "Plus Plan: Free (yearly only)",
+      "superPlusDeal": "Super Plus: 30% off (yearly only)",
+      "viewPlans": "View Student Plans",
+      "applied": "Student discount applied",
+      "checkbox": "I'm a student with .edu email"
+    },
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "Perfect for getting started",
+        "cta": "Get Started"
+      },
+      "plus": {
+        "name": "Plus",
+        "description": "For serious language learners",
+        "cta": "Start Plus"
+      },
+      "superPlus": {
+        "name": "Super Plus",
+        "description": "Ultimate learning experience",
+        "cta": "Go Super Plus"
+      }
+    },
+    "features": {
+      "materials": "Daily learning materials",
+      "conversations": "AI conversations",
+      "reviewCards": "Review cards",
+      "quizTypes": "Quiz types",
+      "voicePractice": "Voice practice",
+      "mistakeAnalysis": "Mistake analysis",
+      "analytics": "Progress analytics",
+      "prioritySupport": "Priority support",
+      "adFree": "Ad-free experience",
+      "unlimited": "Unlimited",
+      "basic": "Basic",
+      "advanced": "Advanced",
+      "detailed": "Detailed",
+      "all": "All",
+      "custom": "Custom"
+    },
+    "comparison": {
+      "title": "Compare All Features",
+      "categories": {
+        "learningContent": "Learning Content",
+        "features": "Features",
+        "support": "Support & Experience"
+      }
+    },
+    "billing": {
+      "title": "Billing & Subscription",
+      "subtitle": "Manage your subscription and billing information",
+      "currentPlan": "Current Plan",
+      "currentPlanDesc": "Your active subscription plan and details",
+      "plan": "Plan",
+      "price": "Price",
+      "started": "Started",
+      "status": "Status",
+      "active": "Active",
+      "cancelled": "Cancelled",
+      "expired": "Expired",
+      "upgradePrompt": "You're currently on the Free plan. Upgrade to unlock more features!",
+      "viewPlans": "View Plans",
+      "manageBilling": "Manage Billing",
+      "billingHistory": "Billing History",
+      "noBillingHistory": "No billing history yet. Upgrade to a paid plan to see your invoices here.",
+      "usage": {
+        "title": "Today's Usage",
+        "materials": "Learning Materials",
+        "conversations": "AI Conversations",
+        "reviewCards": "Review Cards"
+      }
+    },
+    "checkout": {
+      "title": "Payment Coming Soon!",
+      "subtitle": "We're currently setting up secure payment processing. The payment system will be available very soon.",
+      "orderSummary": "Order Summary",
+      "billingCycle": "{cycle} billing",
+      "whatsIncluded": "What's included:",
+      "whatNext": "What happens next?",
+      "steps": {
+        "integration": "Payment integration is in progress",
+        "stripe": "Secure checkout with Stripe",
+        "methods": "Multiple payment methods",
+        "verification": "Student verification via .edu email"
+      },
+      "backToDashboard": "Go to Dashboard",
+      "backToHome": "Back to Home",
+      "notifyMe": "Want to be notified when payment goes live? Check your email preferences in your profile.",
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "changePlan": {
+          "q": "Can I change my plan later?",
+          "a": "Yes, you can upgrade or downgrade your plan at any time from your billing page."
+        },
+        "studentVerify": {
+          "q": "How do I verify my student status?",
+          "a": "Student verification will be done via your .edu email address during the checkout process."
+        },
+        "refund": {
+          "q": "Is there a refund policy?",
+          "a": "We offer a 30-day money-back guarantee if you're not satisfied with your subscription."
+        }
+      }
+    },
+    "upgrade": {
+      "title": "Unlock More Learning Power",
+      "subtitle": "Upgrade to Plus for 20 daily conversations, all quiz types, voice practice, and advanced analytics",
+      "cta": "Upgrade Now"
+    }
   }
 }

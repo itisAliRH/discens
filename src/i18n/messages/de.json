@@ -296,5 +296,132 @@
     "unauthorized": "Sie müssen angemeldet sein",
     "notFound": "Seite nicht gefunden",
     "serverError": "Serverfehler. Bitte versuchen Sie es später erneut"
+  },
+  "pricing": {
+    "title": "Wählen Sie Ihren Plan",
+    "subtitle": "Starten Sie kostenlos und upgraden Sie, wenn Sie wachsen. Alle Pläne beinhalten grundlegende Lernfunktionen.",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "save": "{percent}% sparen",
+    "perMonth": "/Mo",
+    "perYear": "/Jahr",
+    "billedAnnually": "/Mo bei jährlicher Abrechnung",
+    "free": "Kostenlos",
+    "currentPlan": "Aktueller Plan",
+    "mostPopular": "Am beliebtesten",
+    "getStarted": "Loslegen",
+    "upgradeTo": "Upgrade auf {plan}",
+    "studentDiscount": {
+      "title": "Studentenrabatt verfügbar!",
+      "subtitle": "Studenten mit gültiger .edu E-Mail-Adresse haben Anspruch auf Sonderpreise",
+      "plusDeal": "Plus Plan: Kostenlos (nur jährlich)",
+      "superPlusDeal": "Super Plus: 30% Rabatt (nur jährlich)",
+      "viewPlans": "Studentenpläne ansehen",
+      "applied": "Studentenrabatt angewendet",
+      "checkbox": "Ich bin Student mit .edu E-Mail"
+    },
+    "plans": {
+      "free": {
+        "name": "Kostenlos",
+        "description": "Perfekt für den Einstieg",
+        "cta": "Loslegen"
+      },
+      "plus": {
+        "name": "Plus",
+        "description": "Für ernsthafte Sprachlerner",
+        "cta": "Plus starten"
+      },
+      "superPlus": {
+        "name": "Super Plus",
+        "description": "Ultimatives Lernerlebnis",
+        "cta": "Super Plus starten"
+      }
+    },
+    "features": {
+      "materials": "Tägliche Lernmaterialien",
+      "conversations": "KI-Konversationen",
+      "reviewCards": "Wiederholungskarten",
+      "quizTypes": "Quiz-Typen",
+      "voicePractice": "Sprachpraxis",
+      "mistakeAnalysis": "Fehleranalyse",
+      "analytics": "Fortschrittsanalyse",
+      "prioritySupport": "Prioritäts-Support",
+      "adFree": "Werbefrei",
+      "unlimited": "Unbegrenzt",
+      "basic": "Grundlegend",
+      "advanced": "Erweitert",
+      "detailed": "Detailliert",
+      "all": "Alle",
+      "custom": "Benutzerdefiniert"
+    },
+    "comparison": {
+      "title": "Alle Funktionen vergleichen",
+      "categories": {
+        "learningContent": "Lerninhalte",
+        "features": "Funktionen",
+        "support": "Support & Erlebnis"
+      }
+    },
+    "billing": {
+      "title": "Abrechnung & Abonnement",
+      "subtitle": "Verwalten Sie Ihr Abonnement und Abrechnungsinformationen",
+      "currentPlan": "Aktueller Plan",
+      "currentPlanDesc": "Ihr aktiver Abonnementplan und Details",
+      "plan": "Plan",
+      "price": "Preis",
+      "started": "Gestartet",
+      "status": "Status",
+      "active": "Aktiv",
+      "cancelled": "Gekündigt",
+      "expired": "Abgelaufen",
+      "upgradePrompt": "Sie befinden sich derzeit im kostenlosen Plan. Upgraden Sie, um mehr Funktionen freizuschalten!",
+      "viewPlans": "Pläne ansehen",
+      "manageBilling": "Abrechnung verwalten",
+      "billingHistory": "Abrechnungsverlauf",
+      "noBillingHistory": "Noch kein Abrechnungsverlauf. Upgraden Sie auf einen kostenpflichtigen Plan, um Ihre Rechnungen hier zu sehen.",
+      "usage": {
+        "title": "Heutige Nutzung",
+        "materials": "Lernmaterialien",
+        "conversations": "KI-Konversationen",
+        "reviewCards": "Wiederholungskarten"
+      }
+    },
+    "checkout": {
+      "title": "Zahlung kommt bald!",
+      "subtitle": "Wir richten derzeit die sichere Zahlungsabwicklung ein. Das Zahlungssystem wird sehr bald verfügbar sein.",
+      "orderSummary": "Bestellübersicht",
+      "billingCycle": "{cycle} Abrechnung",
+      "whatsIncluded": "Was ist enthalten:",
+      "whatNext": "Was passiert als nächstes?",
+      "steps": {
+        "integration": "Zahlungsintegration läuft",
+        "stripe": "Sichere Zahlung mit Stripe",
+        "methods": "Mehrere Zahlungsmethoden",
+        "verification": "Studentenverifikation über .edu E-Mail"
+      },
+      "backToDashboard": "Zum Dashboard",
+      "backToHome": "Zurück zur Startseite",
+      "notifyMe": "Möchten Sie benachrichtigt werden, wenn die Zahlung live geht? Überprüfen Sie Ihre E-Mail-Einstellungen in Ihrem Profil.",
+      "faq": {
+        "title": "Häufig gestellte Fragen",
+        "changePlan": {
+          "q": "Kann ich meinen Plan später ändern?",
+          "a": "Ja, Sie können Ihren Plan jederzeit von Ihrer Abrechnungsseite upgraden oder downgraden."
+        },
+        "studentVerify": {
+          "q": "Wie verifiziere ich meinen Studentenstatus?",
+          "a": "Die Studentenverifikation erfolgt über Ihre .edu E-Mail-Adresse während des Checkout-Prozesses."
+        },
+        "refund": {
+          "q": "Gibt es eine Rückerstattungsrichtlinie?",
+          "a": "Wir bieten eine 30-tägige Geld-zurück-Garantie, wenn Sie mit Ihrem Abonnement nicht zufrieden sind."
+        }
+      }
+    },
+    "upgrade": {
+      "title": "Mehr Lernkraft freischalten",
+      "subtitle": "Upgraden Sie auf Plus für 20 tägliche Konversationen, alle Quiz-Typen, Sprachpraxis und erweiterte Analysen",
+      "cta": "Jetzt upgraden"
+    }
   }
 }
