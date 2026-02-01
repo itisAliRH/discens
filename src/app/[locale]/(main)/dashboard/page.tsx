@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/icons';
 import { MdOutlineWavingHand } from '@/components/ui/icons';
 import { AnimatedSection, AnimatedStatCard } from '@/components/ui/DashboardAnimations';
+import UpgradeBanner from '@/components/pricing/UpgradeBanner';
 
 // Force dynamic rendering - this page requires authentication
 export const dynamic = 'force-dynamic';
@@ -69,6 +70,9 @@ export default async function DashboardPage() {
           <p className="text-muted-foreground">{engagementMessage}</p>
         </section>
       </AnimatedSection>
+
+      {/* Upgrade Banner - Only for Free users */}
+      <UpgradeBanner currentTier="free" />
 
       {/* Stats Cards */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
