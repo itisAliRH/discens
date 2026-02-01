@@ -4,6 +4,7 @@ import { useState } from 'react';
 import PlanCard from './PlanCard';
 import FeatureComparison from './FeatureComparison';
 import StudentDiscount from './StudentDiscount';
+import CouponCode from './CouponCode';
 import { PRICING_PLANS } from '@/lib/pricing/plans';
 import type { BillingCycle } from '@/types/pricing';
 
@@ -76,6 +77,9 @@ export default function PricingSection({
           <span className="text-sm">I'm a student with .edu email</span>
         </label>
       </div>
+
+      {/* Coupon Code Section */}
+      <CouponCode />
 
       {/* Plan cards */}
       <div id="pricing-plans" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
