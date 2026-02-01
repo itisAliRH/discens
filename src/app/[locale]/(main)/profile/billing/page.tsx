@@ -194,8 +194,8 @@ export default async function BillingPage() {
           {currentSubscription.tier !== "free" &&
             currentSubscription.expiresAt && (
               <div className="mt-6 pt-6 border-t border-border">
-                <div className="p-4 rounded-lg bg-warning/10 border border-warning/30">
-                  <p className="text-sm text-warning-foreground">
+                <div className="p-4 rounded-lg bg-warning/10 border border-warning/30 text-shadow-warning">
+                  <p className="text-sm">
                     {currentSubscription.status === "trial"
                       ? `Your trial expires on ${new Date(
                           currentSubscription.expiresAt,
