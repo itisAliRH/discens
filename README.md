@@ -69,9 +69,8 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 # OpenAI Configuration
 OPENAI_API_KEY=your_openai_api_key
 
-# ElevenLabs Configuration (Optional)
+# ElevenLabs Configuration (Optional - for voice conversations)
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
-NEXT_PUBLIC_ELEVENLABS_AGENT_ID=your_elevenlabs_agent_id
 
 # App Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000

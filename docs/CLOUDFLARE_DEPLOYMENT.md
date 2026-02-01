@@ -99,7 +99,6 @@ NEXT_PUBLIC_APP_URL=https://discens.pages.dev
 ```plaintext
 # ElevenLabs Configuration
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
-NEXT_PUBLIC_ELEVENLABS_AGENT_ID=your_elevenlabs_agent_id
 ```
 
 ### Where to Find These Values:
@@ -113,9 +112,10 @@ NEXT_PUBLIC_ELEVENLABS_AGENT_ID=your_elevenlabs_agent_id
   - Go to [OpenAI Platform](https://platform.openai.com/api-keys)
   - Create a new API key
 
-- **ElevenLabs Keys** (optional):
+- **ElevenLabs API Key** (optional):
   - Go to [ElevenLabs Dashboard](https://elevenlabs.io/)
-  - Get your API key and Agent ID
+  - Get your API key for voice conversations
+  - Voice agents are created dynamically per session
 
 ---
 
@@ -306,7 +306,7 @@ Want to use your own domain instead of `discens.pages.dev`?
 
 3. **ElevenLabs voice not working**
    - Verify `ELEVENLABS_API_KEY` is set
-   - Check that `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is correct
+   - Voice features require server-side API key only (agents are created dynamically)
    - Voice features are optional and won't break the app if missing
 
 ### Pages Not Loading

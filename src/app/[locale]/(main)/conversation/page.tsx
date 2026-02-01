@@ -115,6 +115,14 @@ const ENVIRONMENTS: EnvironmentConfig[] = [
 
 const STORAGE_KEY = 'discens_conversation_state';
 
+// Voice options
+const VOICE_OPTIONS = [
+  { id: 'female_friendly', name: 'Female (Friendly)', description: 'Rachel - Clear and professional' },
+  { id: 'male_professional', name: 'Male (Professional)', description: 'Adam - Deep and authoritative' },
+  { id: 'male_casual', name: 'Male (Casual)', description: 'Antoni - Warm and conversational' },
+  { id: 'female_professional', name: 'Female (Professional)', description: 'Bella - Confident and articulate' },
+];
+
 function ConversationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -136,6 +144,8 @@ function ConversationContent() {
   const [ambianceVolume, setAmbianceVolume] = useState(0.3);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
+  const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<string>('female_friendly');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const ambianceAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -299,13 +309,17 @@ function ConversationContent() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Manage ambiance audio
+  // Manage ambiance audio with auto-ducking when AI speaks
   useEffect(() => {
     if (view === 'chat' && selectedEnvironment !== 'none') {
       const env = ENVIRONMENTS.find(e => e.id === selectedEnvironment);
       if (env?.audioUrl && ambianceAudioRef.current) {
         ambianceAudioRef.current.src = env.audioUrl;
-        ambianceAudioRef.current.volume = ambianceVolume;
+        // Auto-duck volume when AI is speaking
+        const targetVolume = elevenLabsConversation.isSpeaking 
+          ? ambianceVolume * 0.3  // Duck to 30% when AI speaks
+          : ambianceVolume;
+        ambianceAudioRef.current.volume = targetVolume;
         ambianceAudioRef.current.loop = true;
         ambianceAudioRef.current.play().catch(() => {
           // Autoplay might be blocked
@@ -320,7 +334,7 @@ function ConversationContent() {
         ambianceAudioRef.current.pause();
       }
     };
-  }, [view, selectedEnvironment, ambianceVolume]);
+  }, [view, selectedEnvironment, ambianceVolume, elevenLabsConversation.isSpeaking]);
 
   // ===== Helper Functions =====
 
@@ -477,43 +491,38 @@ ${environmentContext}
     }
 
     if (inputMode === 'elevenlabs') {
-      // Start ElevenLabs conversation
+      // Start ElevenLabs conversation with dynamically created agent
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
-        const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
         
-        if (agentId) {
-          // Build first message based on scenario
-          const firstMessage = buildFirstMessage(scenario);
-          
-          // Start the ElevenLabs session (agent configured in ElevenLabs dashboard)
-          await elevenLabsConversation.startSession({
-            agentId,
-            connectionType: 'websocket',
-          });
-          
-          // Add the first message to our local state
-          setMessages([{ role: 'assistant', content: firstMessage }]);
-        } else {
-          console.error('ElevenLabs agent ID not configured');
-          setInputMode('text');
-          // Fall back to text mode
-          const response = await fetch('/api/conversation', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              scenarioId: scenario.id,
-              messages: [],
-              isStart: true,
-              customDescription: scenario.id === 'custom' ? customScenario : undefined,
-              environment: environment,
-            }),
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setMessages([{ role: 'assistant', content: data.response }]);
-          }
+        // Create agent dynamically based on scenario and environment
+        const agentResponse = await fetch('/api/voice/agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scenarioName: scenario.name,
+            scenarioDescription: scenario.id === 'custom' ? customScenario : scenario.description,
+            environment: environment,
+            voiceId: selectedVoice,
+          }),
+        });
+
+        if (!agentResponse.ok) {
+          throw new Error('Failed to create agent');
         }
+
+        const { agentId, signedUrl } = await agentResponse.json();
+        setCurrentAgentId(agentId);
+        
+        // Start the ElevenLabs session with signed URL for authentication
+        await elevenLabsConversation.startSession({
+          signedUrl,
+          connectionType: 'websocket',
+        });
+        
+        // Build and add the first message to our local state
+        const firstMessage = buildFirstMessage(scenario);
+        setMessages([{ role: 'assistant', content: firstMessage }]);
       } catch (error) {
         console.error('Failed to start ElevenLabs conversation:', error);
         // Fall back to text mode
@@ -627,6 +636,16 @@ ${environmentContext}
       ambianceAudioRef.current.pause();
     }
 
+    // Cleanup: Delete the dynamically created agent
+    if (currentAgentId) {
+      fetch('/api/voice/agent', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: currentAgentId }),
+      }).catch(console.error);
+      setCurrentAgentId(null);
+    }
+
     setIsLoading(true);
 
     try {
@@ -668,7 +687,7 @@ ${environmentContext}
     } finally {
       setIsLoading(false);
     }
-  }, [selectedScenario, messages, inputMode, elevenLabsConversation, clearSavedConversation, sessionId]);
+  }, [selectedScenario, messages, inputMode, elevenLabsConversation, clearSavedConversation, sessionId, currentAgentId]);
 
   const changeScenario = useCallback(async () => {
     // Stop ElevenLabs if active
@@ -679,6 +698,15 @@ ${environmentContext}
     if (ambianceAudioRef.current) {
       ambianceAudioRef.current.pause();
     }
+    // Cleanup agent
+    if (currentAgentId) {
+      fetch('/api/voice/agent', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: currentAgentId }),
+      }).catch(console.error);
+      setCurrentAgentId(null);
+    }
     setView('select');
     setSelectedScenario(null);
     setMessages([]);
@@ -687,7 +715,7 @@ ${environmentContext}
     clearSavedConversation();
     // Clear session from URL
     router.push('/conversation', { scroll: false });
-  }, [inputMode, elevenLabsConversation, clearSavedConversation, router]);
+  }, [inputMode, elevenLabsConversation, clearSavedConversation, router, currentAgentId]);
 
   // Copy session link to clipboard
   const copySessionLink = useCallback(() => {
@@ -799,6 +827,30 @@ ${environmentContext}
             </span>
           )}
         </div>
+
+        {/* Voice Selection (only for ElevenLabs mode) */}
+        {inputMode === 'elevenlabs' && (
+          <div className="mb-6 p-4 rounded-xl bg-card border border-border">
+            <span className="text-sm font-medium mb-3 block">AI Voice:</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {VOICE_OPTIONS.map((voice) => (
+                <button
+                  key={voice.id}
+                  onClick={() => setSelectedVoice(voice.id)}
+                  className={`p-3 rounded-xl text-center transition-all ${
+                    selectedVoice === voice.id
+                      ? 'bg-primary/20 border-2 border-primary'
+                      : 'bg-muted/50 border-2 border-transparent hover:bg-muted'
+                  }`}
+                  title={voice.description}
+                >
+                  <div className="text-sm font-medium">{voice.name}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{voice.description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Environment Selector */}
         <div className="mb-6 p-4 rounded-xl bg-card border border-border">

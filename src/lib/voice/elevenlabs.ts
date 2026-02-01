@@ -163,27 +163,19 @@ export function useLanguageConversation() {
 
   const startConversation = useCallback(
     async (scenario: ConversationScenario, userContext?: string) => {
-      const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
-      if (!agentId) {
-        setState((prev) => ({
-          ...prev,
-          errors: [...prev.errors, 'ElevenLabs Agent ID not configured'],
-        }));
-        return;
-      }
-
+      // Note: This hook is deprecated in favor of dynamic agent creation
+      // See: src/app/[locale]/(main)/conversation/page.tsx for the new implementation
+      console.warn('useLanguageConversation.startConversation is deprecated. Use dynamic agent creation instead.');
+      
       const config = SCENARIOS[scenario];
 
       try {
-        await conversation.startSession({
-          agentId,
-          connectionType: 'websocket',
-          dynamicVariables: {
-            scenario: config.title,
-            systemPrompt: config.systemPrompt,
-            userContext: userContext || '',
-          },
-        });
+        // This would need an agentId or signedUrl from dynamic creation
+        // Left as placeholder for backwards compatibility
+        setState((prev) => ({
+          ...prev,
+          errors: [...prev.errors, 'This method requires dynamic agent creation'],
+        }));
       } catch (error) {
         setState((prev) => ({
           ...prev,

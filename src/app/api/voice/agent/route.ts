@@ -4,8 +4,23 @@ import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/agents/create';
 
-// Default voice ID for German language (you can change this)
-const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; // Rachel - clear and professional
+// Voice options for different languages and styles
+const VOICES = {
+  de: {
+    male_professional: '2EiwWnXFnvU5JabPnv8n', // Adam
+    female_friendly: '21m00Tcm4TlvDq8ikWAM', // Rachel
+    male_casual: 'ErXwobaYiN019PkySvjV', // Antoni
+    female_professional: 'EXAVITQu4vr4xnSDxMaL', // Bella
+  },
+  en: {
+    male_professional: '2EiwWnXFnvU5JabPnv8n', // Adam
+    female_friendly: '21m00Tcm4TlvDq8ikWAM', // Rachel
+    male_casual: 'ErXwobaYiN019PkySvjV', // Antoni
+    female_professional: 'EXAVITQu4vr4xnSDxMaL', // Bella
+  }
+};
+
+const DEFAULT_VOICE_ID = VOICES.de.female_friendly;
 
 interface CreateAgentRequest {
   scenarioName: string;
@@ -13,6 +28,23 @@ interface CreateAgentRequest {
   environment: string;
   targetLanguage: string;
   customPrompt?: string;
+  voiceId?: string;
+}
+
+// In-memory cache for agent reuse (key: config hash, value: { agentId, expiresAt })
+const agentCache = new Map<string, { agentId: string; signedUrl: string; expiresAt: number }>();
+
+// Helper to create cache key
+function createCacheKey(config: CreateAgentRequest): string {
+  const key = `${config.scenarioName}-${config.scenarioDescription}-${config.environment}-${config.targetLanguage}-${config.voiceId || DEFAULT_VOICE_ID}`;
+  // Simple hash
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    const char = key.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString();
 }
 
 /**
@@ -49,10 +81,28 @@ export async function POST(request: Request) {
       environment,
       targetLanguage = profile?.target_language || 'de',
       customPrompt,
+      voiceId,
     } = body;
 
     const languageName = targetLanguage === 'de' ? 'German' : 'English';
     const nativeLanguageName = profile?.native_language === 'de' ? 'German' : 'English';
+
+    // Check cache first
+    const cacheKey = createCacheKey(body);
+    const cached = agentCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      console.log('Returning cached agent:', cached.agentId);
+      return NextResponse.json({
+        agentId: cached.agentId,
+        signedUrl: cached.signedUrl,
+        scenarioName,
+        environment,
+        cached: true,
+      });
+    }
+
+    // Select voice
+    const selectedVoiceId = voiceId || DEFAULT_VOICE_ID;
 
     // Build the system prompt for the agent
     const systemPrompt = customPrompt || buildScenarioPrompt({
@@ -87,7 +137,7 @@ export async function POST(request: Request) {
             },
           },
           tts: {
-            voice_id: DEFAULT_VOICE_ID,
+            voice_id: selectedVoiceId,
             model_id: 'eleven_turbo_v2_5',
             stability: 0.5,
             similarity_boost: 0.75,
@@ -106,11 +156,42 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
+    const agentId = data.agent_id;
+
+    // Get signed URL for authenticated WebSocket connection
+    const signedUrlResponse = await fetch(
+      `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${agentId}`,
+      {
+        headers: {
+          'xi-api-key': ELEVENLABS_API_KEY,
+        },
+      }
+    );
+
+    if (!signedUrlResponse.ok) {
+      console.error('Failed to get signed URL');
+      return NextResponse.json(
+        { error: 'Failed to get signed URL for agent' },
+        { status: 500 }
+      );
+    }
+
+    const signedUrlData = await signedUrlResponse.json();
+    const signedUrl = signedUrlData.signed_url;
+
+    // Cache the agent for 1 hour
+    agentCache.set(cacheKey, {
+      agentId,
+      signedUrl,
+      expiresAt: Date.now() + 3600000, // 1 hour
+    });
 
     return NextResponse.json({
-      agentId: data.agent_id,
+      agentId,
+      signedUrl,
       scenarioName,
       environment,
+      cached: false,
     });
   } catch (error) {
     console.error('Voice agent creation error:', error);
@@ -220,4 +301,66 @@ function getEnvironmentContext(environment: string): string {
   };
   
   return contexts[environment] || contexts.none;
+}
+
+/**
+ * DELETE /api/voice/agent
+ * Delete a dynamically created ElevenLabs agent
+ */
+export async function DELETE(request: Request) {
+  try {
+    if (!ELEVENLABS_API_KEY) {
+      return NextResponse.json(
+        { error: 'ElevenLabs API key not configured' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = await createUntypedServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { agentId } = await request.json();
+
+    if (!agentId) {
+      return NextResponse.json({ error: 'Agent ID required' }, { status: 400 });
+    }
+
+    // Delete the agent via ElevenLabs API
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/convai/agents/${agentId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'xi-api-key': ELEVENLABS_API_KEY,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('ElevenLabs agent deletion error:', errorData);
+      // Don't fail if agent doesn't exist or already deleted
+      if (response.status === 404) {
+        return NextResponse.json({ message: 'Agent already deleted' });
+      }
+      return NextResponse.json(
+        { error: 'Failed to delete voice agent' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      message: 'Agent deleted successfully',
+    });
+  } catch (error) {
+    console.error('Voice agent deletion error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
