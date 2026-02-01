@@ -76,6 +76,13 @@ export async function POST(request: Request) {
       );
     }
 
+    // Helper to remove null values from objects for cleaner storage
+    const cleanObject = <T extends Record<string, unknown>>(obj: T): Partial<T> => {
+      return Object.fromEntries(
+        Object.entries(obj).filter(([, value]) => value !== null && value !== undefined)
+      ) as Partial<T>;
+    };
+
     // Insert generated materials
     const materialsToInsert: Array<Record<string, unknown>> = [];
 
@@ -84,7 +91,7 @@ export async function POST(request: Request) {
       materialsToInsert.push({
         memory_id: memory.id,
         type: 'word',
-        content: {
+        content: cleanObject({
           word: word.word,
           article: word.article,
           meaning: word.meaning,
@@ -93,7 +100,7 @@ export async function POST(request: Request) {
           synonyms: word.synonyms,
           partOfSpeech: word.partOfSpeech,
           pluralForm: word.pluralForm,
-        },
+        }),
         categories: [word.category as MaterialCategory],
         difficulty_level: word.difficultyLevel,
         mastery_level: 0,
@@ -119,7 +126,7 @@ export async function POST(request: Request) {
       });
     });
 
-    // Add grammar
+    // Add grammar - clean up nullable incorrect field in examples
     result.materials.grammar?.forEach(grammar => {
       materialsToInsert.push({
         memory_id: memory.id,
@@ -127,7 +134,10 @@ export async function POST(request: Request) {
         content: {
           rule: grammar.rule,
           explanation: grammar.explanation,
-          examples: grammar.examples,
+          examples: grammar.examples.map(ex => cleanObject({
+            correct: ex.correct,
+            incorrect: ex.incorrect,
+          })),
         },
         categories: [grammar.category as MaterialCategory],
         difficulty_level: grammar.difficultyLevel,
