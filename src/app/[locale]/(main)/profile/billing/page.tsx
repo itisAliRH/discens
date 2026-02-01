@@ -1,38 +1,73 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { LuArrowLeft, LuCrown, LuCreditCard, LuCalendar, LuBadgeCheck } from '@/components/ui/icons';
-import PricingSection from '@/components/pricing/PricingSection';
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import {
+  LuArrowLeft,
+  LuCrown,
+  LuCreditCard,
+  LuCalendar,
+  LuBadgeCheck,
+} from "@/components/ui/icons";
+import { LuTag } from "react-icons/lu";
+import PricingSection from "@/components/pricing/PricingSection";
+import {
+  getUserSubscription,
+  getSubscriptionLimits,
+  isSubscriptionActive,
+} from "@/lib/pricing/subscription";
+import type { UserSubscription } from "@/lib/pricing/subscription";
 
 // Force dynamic rendering - this page requires authentication
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: 'Billing & Subscription',
+  title: "Billing & Subscription",
 };
 
 export default async function BillingPage() {
   const supabase = await createClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
-    redirect('/login');
+    redirect("/login");
   }
 
   // Fetch user profile
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
     .single();
 
-  // Mock current subscription (in a real app, fetch from database)
-  const currentSubscription = {
-    tier: 'free',
-    cycle: 'monthly' as const,
-    status: 'active' as const,
-    startDate: new Date().toISOString(),
-  };
+  // Fetch real subscription data
+  const subscription = await getUserSubscription(supabase, user.id);
+  const isActive = isSubscriptionActive(subscription);
+
+  const currentSubscription = subscription
+    ? {
+        tier: subscription.tier,
+        cycle: subscription.billing_cycle || ("monthly" as const),
+        status: subscription.status as
+          | "active"
+          | "cancelled"
+          | "expired"
+          | "trial",
+        startDate: subscription.started_at,
+        expiresAt: subscription.expires_at,
+        couponCode: subscription.coupon_code,
+        pricePaid: subscription.price_paid,
+      }
+    : {
+        tier: "free" as const,
+        cycle: "monthly" as const,
+        status: "active" as const,
+        startDate: new Date().toISOString(),
+        expiresAt: null,
+        couponCode: null,
+        pricePaid: 0,
+      };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -66,12 +101,18 @@ export default async function BillingPage() {
             </div>
             <span
               className={`px-3 py-1 rounded-full text-xs font-medium ${
-                currentSubscription.status === 'active'
-                  ? 'bg-success/10 text-success'
-                  : 'bg-muted text-muted-foreground'
+                isActive
+                  ? currentSubscription.status === "trial"
+                    ? "bg-warning/10 text-warning"
+                    : "bg-success/10 text-success"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
-              {currentSubscription.status === 'active' ? 'Active' : 'Inactive'}
+              {isActive
+                ? currentSubscription.status === "trial"
+                  ? "Trial"
+                  : "Active"
+                : "Inactive"}
             </span>
           </div>
 
@@ -79,31 +120,65 @@ export default async function BillingPage() {
             <div>
               <div className="text-sm text-muted-foreground mb-1">Plan</div>
               <div className="text-lg font-semibold capitalize">
-                {currentSubscription.tier === 'super_plus' ? 'Super Plus' : currentSubscription.tier}
+                {currentSubscription.tier === "super_plus"
+                  ? "Super Plus"
+                  : currentSubscription.tier}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground mb-1">Price</div>
               <div className="text-lg font-semibold">
-                {currentSubscription.tier === 'free' ? 'Free' : '€0.00/month'}
+                {currentSubscription.tier === "free"
+                  ? "Free"
+                  : currentSubscription.pricePaid === 0
+                    ? "Free Trial"
+                    : `€${currentSubscription.pricePaid.toFixed(2)}/${currentSubscription.cycle === "yearly" ? "year" : "month"}`}
               </div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground mb-1">Started</div>
+              <div className="text-sm text-muted-foreground mb-1">
+                {currentSubscription.expiresAt ? "Expires" : "Started"}
+              </div>
               <div className="text-lg font-semibold">
-                {new Date(currentSubscription.startDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {currentSubscription.expiresAt
+                  ? new Date(currentSubscription.expiresAt).toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      },
+                    )
+                  : new Date(currentSubscription.startDate).toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      },
+                    )}
               </div>
             </div>
           </div>
 
-          {currentSubscription.tier === 'free' && (
+          {/* Coupon code info */}
+          {currentSubscription.couponCode && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center gap-2 text-sm">
+                <LuTag className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground">Applied coupon:</span>
+                <span className="font-medium">
+                  {currentSubscription.couponCode.toUpperCase()}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {currentSubscription.tier === "free" && (
             <div className="mt-6 pt-6 border-t border-border">
               <p className="text-sm text-muted-foreground mb-4">
-                You're currently on the Free plan. Upgrade to unlock more features!
+                You're currently on the Free plan. Upgrade to unlock more
+                features!
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link
@@ -115,33 +190,77 @@ export default async function BillingPage() {
               </div>
             </div>
           )}
+
+          {currentSubscription.tier !== "free" &&
+            currentSubscription.expiresAt && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="p-4 rounded-lg bg-warning/10 border border-warning/30">
+                  <p className="text-sm text-warning-foreground">
+                    {currentSubscription.status === "trial"
+                      ? `Your trial expires on ${new Date(
+                          currentSubscription.expiresAt,
+                        ).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}. Upgrade to continue after the trial ends.`
+                      : `Your subscription expires on ${new Date(
+                          currentSubscription.expiresAt,
+                        ).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}.`}
+                  </p>
+                </div>
+              </div>
+            )}
         </div>
       </div>
 
-      {/* Usage Stats (for Free tier) */}
-      {currentSubscription.tier === 'free' && (
+      {/* Usage Stats */}
+      {(currentSubscription.tier === "free" ||
+        currentSubscription.tier === "plus") && (
         <div className="mb-12">
           <h2 className="text-xl font-semibold mb-4">Today's Usage</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <UsageCard
-              title="Learning Materials"
-              used={3}
-              limit={10}
-              icon={<LuBadgeCheck className="w-5 h-5" />}
-            />
-            <UsageCard
-              title="AI Conversations"
-              used={1}
-              limit={3}
-              icon={<LuBadgeCheck className="w-5 h-5" />}
-            />
-            <UsageCard
-              title="Review Cards"
-              used={8}
-              limit={20}
-              icon={<LuBadgeCheck className="w-5 h-5" />}
-            />
-          </div>
+          {(() => {
+            const limits = getSubscriptionLimits(currentSubscription.tier);
+            // TODO: Fetch actual usage from database
+            const usage = {
+              materials: 3,
+              conversations: 1,
+              reviewCards: 8,
+            };
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <UsageCard
+                  title="Learning Materials"
+                  used={usage.materials}
+                  limit={limits.materials === Infinity ? "∞" : limits.materials}
+                  icon={<LuBadgeCheck className="w-5 h-5" />}
+                />
+                <UsageCard
+                  title="AI Conversations"
+                  used={usage.conversations}
+                  limit={
+                    limits.conversations === Infinity
+                      ? "∞"
+                      : limits.conversations
+                  }
+                  icon={<LuBadgeCheck className="w-5 h-5" />}
+                />
+                <UsageCard
+                  title="Review Cards"
+                  used={usage.reviewCards}
+                  limit={
+                    limits.reviewCards === Infinity ? "∞" : limits.reviewCards
+                  }
+                  icon={<LuBadgeCheck className="w-5 h-5" />}
+                />
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -165,7 +284,8 @@ export default async function BillingPage() {
         <div className="rounded-xl border-2 border-dashed border-border p-8 text-center">
           <LuCreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">
-            No billing history yet. Upgrade to a paid plan to see your invoices here.
+            No billing history yet. Upgrade to a paid plan to see your invoices
+            here.
           </p>
         </div>
       </div>
@@ -181,11 +301,12 @@ function UsageCard({
 }: {
   title: string;
   used: number;
-  limit: number;
+  limit: number | string;
   icon: React.ReactNode;
 }) {
-  const percentage = (used / limit) * 100;
-  const isNearLimit = percentage >= 80;
+  const isUnlimited = limit === "∞" || limit === Infinity;
+  const percentage = isUnlimited ? 0 : (used / (limit as number)) * 100;
+  const isNearLimit = !isUnlimited && percentage >= 80;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -195,17 +316,22 @@ function UsageCard({
       </div>
       <div className="mb-2">
         <div className="text-2xl font-bold">
-          {used} <span className="text-sm text-muted-foreground font-normal">/ {limit}</span>
+          {used}{" "}
+          <span className="text-sm text-muted-foreground font-normal">
+            / {isUnlimited ? "∞" : limit}
+          </span>
         </div>
       </div>
-      <div className="h-2 bg-muted rounded-full overflow-hidden">
-        <div
-          className={`h-full transition-all ${
-            isNearLimit ? 'bg-warning' : 'bg-primary'
-          }`}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
+      {!isUnlimited && (
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all ${
+              isNearLimit ? "bg-warning" : "bg-primary"
+            }`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
