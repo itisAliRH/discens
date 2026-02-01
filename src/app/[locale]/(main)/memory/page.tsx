@@ -126,13 +126,7 @@ export default function MemoryPage() {
 
   const loadMemory = useCallback(async () => {
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'memory/page.tsx:127',message:'loadMemory called',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B,C'})}).catch(()=>{});
-      // #endregion
       const response = await fetch('/api/memory');
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'memory/page.tsx:130',message:'API response',data:{status:response.status,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,C'})}).catch(()=>{});
-      // #endregion
       if (!response.ok) {
         if (response.status === 401) {
           setError('Please log in to view your memory');
@@ -141,22 +135,13 @@ export default function MemoryPage() {
         } else {
           setError('Failed to load memory');
         }
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'memory/page.tsx:135',message:'API error response',data:{status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B,D'})}).catch(()=>{});
-        // #endregion
         return;
       }
       const data = await response.json();
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'memory/page.tsx:141',message:'Memory data received',data:{hasMemory:!!data.memory,hasStats:!!data.stats},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       setMemory(data.memory);
       setStats(data.stats);
     } catch (err) {
       console.error('Memory load error:', err);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'memory/page.tsx:145',message:'Exception in loadMemory',data:{error:err instanceof Error?err.message:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       setError('Failed to load memory');
     }
   }, []);

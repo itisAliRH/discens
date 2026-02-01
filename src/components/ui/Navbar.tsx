@@ -8,20 +8,30 @@ import UserMenu from './UserMenu';
 import { useEffect, useState } from 'react';
 import { useSupabase } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
+import { 
+  LuHome, 
+  LuBookOpen, 
+  LuRefreshCw, 
+  LuMessageCircle, 
+  LuHistory, 
+  LuBrain 
+} from 'react-icons/lu';
+import type { ReactNode } from 'react';
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function NavLink({ href, label, icon }: { href: string; label: string; icon: ReactNode }) {
   const pathname = usePathname();
   const isActive = pathname?.includes(href);
 
   return (
     <Link
       href={href}
-      className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+      className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
         isActive
           ? 'text-foreground bg-accent'
           : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
       }`}
     >
+      {icon}
       {label}
     </Link>
   );
@@ -81,12 +91,12 @@ export default function Navbar() {
             {/* Desktop Navigation Links (only show when logged in) */}
             {isLoggedIn && isMainApp && (
               <div className="hidden md:flex items-center gap-1">
-                <NavLink href="/dashboard" label={t('dashboard')} />
-                <NavLink href="/learn" label={t('learn')} />
-                <NavLink href="/review" label={t('review')} />
-                <NavLink href="/conversation" label="Talk" />
-                <NavLink href="/history" label={t('history')} />
-                <NavLink href="/memory" label={t('memory')} />
+                <NavLink href="/dashboard" label={t('dashboard')} icon={<LuHome className="w-4 h-4" />} />
+                <NavLink href="/learn" label={t('learn')} icon={<LuBookOpen className="w-4 h-4" />} />
+                <NavLink href="/review" label={t('review')} icon={<LuRefreshCw className="w-4 h-4" />} />
+                <NavLink href="/conversation" label="Talk" icon={<LuMessageCircle className="w-4 h-4" />} />
+                <NavLink href="/history" label={t('history')} icon={<LuHistory className="w-4 h-4" />} />
+                <NavLink href="/memory" label={t('memory')} icon={<LuBrain className="w-4 h-4" />} />
               </div>
             )}
           </div>

@@ -42,29 +42,13 @@ export default function HistoryPage() {
   useEffect(() => {
     async function loadSessions() {
       try {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history/page.tsx:43',message:'loadSessions called',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B,C'})}).catch(()=>{});
-        // #endregion
         const response = await fetch('/api/conversation/sessions');
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history/page.tsx:46',message:'API response',data:{status:response.status,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,C'})}).catch(()=>{});
-        // #endregion
         if (response.ok) {
           const data = await response.json();
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history/page.tsx:49',message:'Sessions data received',data:{sessionCount:data.sessions?.length||0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
           setSessions(data.sessions || []);
-        } else {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history/page.tsx:51',message:'API error response',data:{status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,C'})}).catch(()=>{});
-          // #endregion
         }
       } catch (error) {
         console.error('Failed to load sessions:', error);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf43d447-3d50-4017-b28c-3fe71b95d859',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'history/page.tsx:54',message:'Exception in loadSessions',data:{error:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       } finally {
         setIsLoading(false);
       }
