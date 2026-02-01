@@ -10,7 +10,7 @@ import { openai } from '@ai-sdk/openai';
 // See: https://ai-sdk.dev/docs/troubleshooting/no-object-generated-content-filter
 
 const GeneratedWordSchema = z.object({
-  word: z.string().describe('The word in the target language'),
+  word: z.string().describe('The word in the target language (without article prefix)'),
   article: z.string().nullable().describe('Article for nouns (der/die/das for German)'),
   meaning: z.string().describe('Translation/meaning in the native language'),
   pronunciation: z.string().nullable().describe('Phonetic pronunciation guide'),
@@ -18,7 +18,7 @@ const GeneratedWordSchema = z.object({
   synonyms: z.array(z.string()).nullable().describe('List of synonyms'),
   partOfSpeech: z.string().describe('Part of speech (noun, verb, adjective, etc.)'),
   pluralForm: z.string().nullable().describe('Plural form of nouns'),
-  category: z.string().describe('Category like daily_life, travel, work, etc.'),
+  categories: z.array(z.string()).min(1).max(5).describe('Categories like daily_life, travel, work, etc. (1-5 categories per word)'),
   difficultyLevel: z.number().int().min(1).max(5).describe('Difficulty level from 1 (easiest) to 5 (hardest)'),
   cefrLevel: z.string().describe('CEFR level: A1, A2, B1, B2, C1, or C2'),
 });
@@ -120,7 +120,8 @@ ${customPrompt ? `\nUSER'S SPECIFIC LEARNING FOCUS:\n${customPrompt}\n\nIMPORTAN
 CRITICAL GUIDELINES:
 - Generate practical, everyday vocabulary and grammar
 - Include real-world usage examples
-- For German nouns: ALWAYS include articles (der/die/das)
+- For German nouns: ALWAYS provide the article (der/die/das) in the "article" field, but NEVER include it in the "word" field
+- The "word" field must contain ONLY the word itself (e.g., "Apfel" not "der Apfel")
 - Ensure difficulty matches the ${cefrLevel} level
 - Focus on the requested categories: ${categories.join(', ')}${customPrompt ? ' and the user\'s specific learning focus above' : ''}
 - difficultyLevel MUST be an integer from 1 to 5 (use ${baseDifficulty} as baseline for ${cefrLevel})
@@ -136,7 +137,10 @@ Generate exactly:
 - ${phraseCount} phrases/expressions${customPrompt ? ' useful in the described situation' : ''}
 - ${grammarCount} grammar point(s)${customPrompt ? ' relevant to expressing the user\'s needs' : ''}
 
-Remember: difficultyLevel must be an integer between 1-5 (${baseDifficulty} is appropriate for ${cefrLevel}).`;
+Remember: 
+- difficultyLevel must be an integer between 1-5 (${baseDifficulty} is appropriate for ${cefrLevel})
+- Each word can have 1-5 categories assigned based on relevance
+- For German nouns: word field must NOT include article (e.g., "Apfel" not "der Apfel")`;
 
   try {
     const result = await generateObject({
