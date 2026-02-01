@@ -84,14 +84,14 @@ export async function POST(request: Request) {
     };
 
     // Check for existing words to avoid duplicates
-    const { data: existingMaterials } = await supabase
+    const { data: existingWordMaterials } = await supabase
       .from('materials')
       .select('content')
       .eq('memory_id', memory.id)
       .eq('type', 'word');
     
     const existingWords = new Set(
-      (existingMaterials || []).map((m: { content: { word?: string } }) => 
+      (existingWordMaterials || []).map((m: { content: { word?: string } }) => 
         m.content?.word?.toLowerCase().trim()
       ).filter(Boolean)
     );
