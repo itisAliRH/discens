@@ -878,6 +878,11 @@ export default function ReviewPage() {
     );
   }
 
+  // Safety check - should not happen but ensures TypeScript safety
+  if (!session) {
+    return null;
+  }
+
   const card = session.cards[session.currentIndex];
   const material = card.materials;
   const progress = ((session.currentIndex + 1) / session.cards.length) * 100;
