@@ -251,6 +251,26 @@
       "saving": "Saving...",
       "success": "Profile updated successfully",
       "error": "Failed to update profile"
+    },
+    "account": {
+      "dangerZone": "Danger Zone",
+      "dangerZoneDesc": "Irreversible and destructive actions",
+      "resetAccount": "Reset Account",
+      "resetAccountDesc": "Clear all your learning data, progress, and settings. Your account will remain, but you'll need to start from scratch.",
+      "resetAccountConfirm": "Are you sure you want to reset your account?",
+      "resetAccountMessage": "This will delete all your learning materials, progress, streaks, badges, and conversation history. This action cannot be undone.",
+      "deleteAccount": "Delete Account",
+      "deleteAccountDesc": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "deleteAccountConfirm": "Are you sure you want to delete your account?",
+      "deleteAccountMessage": "This will permanently delete your account, all your data, and you will be logged out. Type DELETE to confirm.",
+      "resetButton": "Reset Account",
+      "deleteButton": "Delete Account",
+      "resetting": "Resetting...",
+      "deleting": "Deleting...",
+      "resetSuccess": "Account reset successfully. Redirecting...",
+      "deleteSuccess": "Account deleted successfully. Redirecting...",
+      "resetError": "Failed to reset account",
+      "deleteError": "Failed to delete account"
     }
   },
   "onboarding": {
@@ -422,6 +442,24 @@
       "title": "Unlock More Learning Power",
       "subtitle": "Upgrade to Plus for 20 daily conversations, all quiz types, voice practice, and advanced analytics",
       "cta": "Upgrade Now"
+    },
+    "coupon": {
+      "title": "Have a coupon code?",
+      "placeholder": "Enter coupon code",
+      "validate": "Validate",
+      "validating": "Validating...",
+      "apply": "Apply",
+      "applying": "Applying...",
+      "applied": "Coupon Applied",
+      "invalid": "Invalid coupon code",
+      "expired": "Coupon code has expired",
+      "used": "You have already used this coupon code",
+      "maxUses": "Coupon code has reached maximum usage limit",
+      "notYetValid": "Coupon code is not yet valid",
+      "applySuccess": "Successfully upgraded to {tier} for {months} month(s) free!",
+      "applyError": "Failed to apply coupon code",
+      "clear": "Clear coupon",
+      "applyAndUpgrade": "Apply & Upgrade to {tier}"
     }
   }
 }

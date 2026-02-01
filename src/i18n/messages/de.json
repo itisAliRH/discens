@@ -251,6 +251,26 @@
       "saving": "Speichert...",
       "success": "Profil erfolgreich aktualisiert",
       "error": "Fehler beim Aktualisieren des Profils"
+    },
+    "account": {
+      "dangerZone": "Gefahrenzone",
+      "dangerZoneDesc": "Irreversible und zerstörerische Aktionen",
+      "resetAccount": "Konto zurücksetzen",
+      "resetAccountDesc": "Löschen Sie alle Ihre Lerndaten, Fortschritte und Einstellungen. Ihr Konto bleibt erhalten, aber Sie müssen von vorne beginnen.",
+      "resetAccountConfirm": "Sind Sie sicher, dass Sie Ihr Konto zurücksetzen möchten?",
+      "resetAccountMessage": "Dies löscht alle Ihre Lernmaterialien, Fortschritte, Serien, Abzeichen und Konversationsverlauf. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteAccount": "Konto löschen",
+      "deleteAccountDesc": "Löschen Sie Ihr Konto und alle zugehörigen Daten dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteAccountConfirm": "Sind Sie sicher, dass Sie Ihr Konto löschen möchten?",
+      "deleteAccountMessage": "Dies löscht Ihr Konto, alle Ihre Daten dauerhaft und Sie werden abgemeldet. Geben Sie LÖSCHEN ein, um zu bestätigen.",
+      "resetButton": "Konto zurücksetzen",
+      "deleteButton": "Konto löschen",
+      "resetting": "Wird zurückgesetzt...",
+      "deleting": "Wird gelöscht...",
+      "resetSuccess": "Konto erfolgreich zurückgesetzt. Weiterleitung...",
+      "deleteSuccess": "Konto erfolgreich gelöscht. Weiterleitung...",
+      "resetError": "Fehler beim Zurücksetzen des Kontos",
+      "deleteError": "Fehler beim Löschen des Kontos"
     }
   },
   "onboarding": {
@@ -422,6 +442,24 @@
       "title": "Mehr Lernkraft freischalten",
       "subtitle": "Upgraden Sie auf Plus für 20 tägliche Konversationen, alle Quiz-Typen, Sprachpraxis und erweiterte Analysen",
       "cta": "Jetzt upgraden"
+    },
+    "coupon": {
+      "title": "Haben Sie einen Gutscheincode?",
+      "placeholder": "Gutscheincode eingeben",
+      "validate": "Prüfen",
+      "validating": "Wird geprüft...",
+      "apply": "Anwenden",
+      "applying": "Wird angewendet...",
+      "applied": "Gutschein angewendet",
+      "invalid": "Ungültiger Gutscheincode",
+      "expired": "Gutscheincode ist abgelaufen",
+      "used": "Sie haben diesen Gutscheincode bereits verwendet",
+      "maxUses": "Gutscheincode hat die maximale Nutzungsgrenze erreicht",
+      "notYetValid": "Gutscheincode ist noch nicht gültig",
+      "applySuccess": "Erfolgreich auf {tier} für {months} Monat(e) kostenlos aktualisiert!",
+      "applyError": "Fehler beim Anwenden des Gutscheincodes",
+      "clear": "Gutschein löschen",
+      "applyAndUpgrade": "Anwenden & Upgraden auf {tier}"
     }
   }
 }
