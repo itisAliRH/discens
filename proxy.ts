@@ -1,5 +1,5 @@
 import createMiddleware from 'next-intl/middleware';
-import { type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { locales, defaultLocale } from './src/i18n/config';
 import { updateSession } from './src/lib/supabase/middleware';
 
@@ -11,6 +11,17 @@ const intlMiddleware = createMiddleware({
 });
 
 export default async function proxy(request: NextRequest) {
+  // Skip proxy processing for API routes, static files, and Next.js internals
+  const pathname = request.nextUrl.pathname;
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/_vercel') ||
+    /\.[^/]+$/.test(pathname) // Files with extensions (e.g., .ico, .png)
+  ) {
+    return NextResponse.next();
+  }
+
   // Handle locale routing first
   const intlResponse = intlMiddleware(request);
 
