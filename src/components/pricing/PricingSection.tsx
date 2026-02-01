@@ -21,7 +21,7 @@ export default function PricingSection({
   showComparison = true,
   showStudentDiscount = true,
 }: PricingSectionProps) {
-  const [cycle, setCycle] = useState<BillingCycle>('yearly');
+  const [cycle, setCycle] = useState<BillingCycle>('monthly');
   const [isStudent, setIsStudent] = useState(false);
 
   return (
