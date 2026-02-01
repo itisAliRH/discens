@@ -9,7 +9,8 @@ const root = path.resolve(__dirname, '..');
 const input = path.join(root, 'public', 'favicon.png');
 const output = path.join(root, 'src', 'app', 'favicon.ico');
 
-const image = sharp(input);
+// Convert to RGBA format before generating ICO
+const image = sharp(input).ensureAlpha();
 await ico.sharpsToIco([image], output, {
   sizes: [48, 32, 16],
   resizeOptions: {},
