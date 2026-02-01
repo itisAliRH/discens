@@ -504,11 +504,32 @@ ${environmentContext}
             scenarioDescription: scenario.id === 'custom' ? customScenario : scenario.description,
             environment: environment,
             voiceId: selectedVoice,
+            targetLanguage: 'de',
           }),
         });
 
         if (!agentResponse.ok) {
-          throw new Error('Failed to create agent');
+          let errorDetails: { error?: string; details?: string; rawText?: string } = {};
+          const contentType = agentResponse.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            try {
+              errorDetails = await agentResponse.json();
+            } catch {
+              errorDetails = { rawText: await agentResponse.text() };
+            }
+          } else {
+            errorDetails = { rawText: await agentResponse.text() };
+          }
+
+          console.error('Agent creation failed:', {
+            status: agentResponse.status,
+            statusText: agentResponse.statusText,
+            contentType,
+            error: errorDetails,
+          });
+
+          const errorMsg = errorDetails.error || errorDetails.details || errorDetails.rawText || agentResponse.statusText || 'Unknown error';
+          throw new Error(`Failed to create agent: ${errorMsg}`);
         }
 
         const { agentId, signedUrl } = await agentResponse.json();
@@ -527,6 +548,7 @@ ${environmentContext}
         console.error('Failed to start ElevenLabs conversation:', error);
         // Fall back to text mode
         setInputMode('text');
+        setIsLoading(false);
         try {
           const response = await fetch('/api/conversation', {
             method: 'POST',
@@ -546,6 +568,7 @@ ${environmentContext}
         } catch (fallbackError) {
           console.error('Fallback to text mode also failed:', fallbackError);
         }
+        return; // Exit early after fallback
       }
       setIsLoading(false);
     } else {
