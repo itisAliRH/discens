@@ -803,11 +803,9 @@ function WordEditForm({
     e.preventDefault();
     if (formData.word && formData.meaning) {
       // Ensure categories is an array and limit to 5
-      const categories = Array.isArray(formData.categories) 
+      const categories = Array.isArray(formData.categories) && formData.categories.length > 0
         ? formData.categories.slice(0, 5)
-        : formData.categories && formData.categories.length > 0
-          ? formData.categories
-          : ['daily_life'];
+        : ['daily_life'];
       
       onSave({
         word: formData.word,
