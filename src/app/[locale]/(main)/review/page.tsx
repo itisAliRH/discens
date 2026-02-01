@@ -4,11 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { QuizType } from '@/types/database';
+import type { MultipleChoiceQuestion, TrueFalseQuestion, FillBlankQuestion, QuizBatch } from '@/lib/ai/quiz';
 import QuizTypeSelector from '@/components/quiz/QuizTypeSelector';
 import {
   LuLock,
   LuFileText,
   LuRefreshCw,
+  LuBook,
+  LuCheckCircle,
+  LuCircle,
 } from '@/components/ui/icons';
 import { TbMoodConfuzed } from '@/components/ui/icons';
 import { PiConfetti } from '@/components/ui/icons';
@@ -52,7 +56,11 @@ interface SessionState {
   materialIds: string[];
 }
 
-type ViewState = 'select' | 'review' | 'loading';
+type ViewState = 'select' | 'review' | 'quiz' | 'loading' | 'feedback';
+
+type Question = (MultipleChoiceQuestion & { type: 'multiple_choice' }) 
+  | (TrueFalseQuestion & { type: 'true_false' }) 
+  | (FillBlankQuestion & { type: 'fill_blank' });
 
 export default function ReviewPage() {
   const router = useRouter();
@@ -65,14 +73,61 @@ export default function ReviewPage() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [isRating, setIsRating] = useState(false);
   const [selectedQuizTypes, setSelectedQuizTypes] = useState<QuizType[]>(['multiple_choice', 'fill_blank']);
+  const [useFlashCards, setUseFlashCards] = useState(false);
+  const [quizSession, setQuizSession] = useState<{
+    questions: Question[];
+    currentIndex: number;
+    answers: Array<{
+      isCorrect: boolean;
+      userAnswer: string;
+      feedback: string;
+      timeSpent: number;
+    }>;
+    startTime: number;
+    questionStartTime: number;
+    sessionId: string;
+    materialIds: string[];
+  } | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [fillAnswer, setFillAnswer] = useState('');
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackData, setFeedbackData] = useState<{
+    totalXP: number;
+    correct: number;
+    incorrect: number;
+    total: number;
+    duration: number;
+  } | null>(null);
+  const [questionFeedback, setQuestionFeedback] = useState<{
+    isCorrect: boolean;
+    feedback: string;
+    score: number;
+  } | null>(null);
 
   // Get conversation scenario ID from URL if present
   const conversationScenarioId = searchParams.get('scenario');
 
+  // Flatten quiz batch into array of questions
+  function flattenQuestions(batch: QuizBatch): Question[] {
+    const questions: Question[] = [];
+    
+    batch.multipleChoice?.forEach(q => {
+      questions.push({ ...q, type: 'multiple_choice' });
+    });
+    batch.trueFalse?.forEach(q => {
+      questions.push({ ...q, type: 'true_false' });
+    });
+    batch.fillBlank?.forEach(q => {
+      questions.push({ ...q, type: 'fill_blank' });
+    });
+    
+    return questions;
+  }
+
   // Start review session
   const startSession = useCallback(async () => {
-    if (selectedQuizTypes.length === 0) {
-      setError('Please select at least one quiz type');
+    if (!useFlashCards && selectedQuizTypes.length === 0) {
+      setError('Please select at least one quiz type or flash cards');
       setErrorType('generic');
       return;
     }
@@ -88,7 +143,7 @@ export default function ReviewPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionType: 'review',
-          quizTypes: selectedQuizTypes,
+          quizTypes: useFlashCards ? [] : selectedQuizTypes,
           conversationScenarioId: conversationScenarioId || undefined,
         }),
       });
@@ -114,12 +169,48 @@ export default function ReviewPage() {
       const sessionData = await sessionResponse.json();
       const sessionId = sessionData.session.id;
 
-      // Generate quiz from existing materials (review mode)
+      // If using flash cards, use the flash card flow
+      if (useFlashCards) {
+        const cardsResponse = await fetch('/api/review/cards');
+
+        if (!cardsResponse.ok) {
+          const errorData = await cardsResponse.json().catch(() => ({}));
+          setErrorType('generic');
+          setError(errorData.error || 'Failed to load review cards');
+          setIsLoading(false);
+          setView('select');
+          return;
+        }
+
+        const cardsData = await cardsResponse.json();
+        
+        if (!cardsData.cards || cardsData.cards.length === 0) {
+          setIsLoading(false);
+          setView('select');
+          return;
+        }
+
+        const materialIds = cardsData.cards.map((c: ReviewCard) => c.material_id);
+
+        setSession({
+          cards: cardsData.cards,
+          currentIndex: 0,
+          results: [],
+          startTime: Date.now(),
+          sessionId,
+          materialIds,
+        });
+        setIsLoading(false);
+        setView('review');
+        return;
+      }
+
+      // Otherwise, generate quiz questions from existing materials
       const quizResponse = await fetch('/api/quiz/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          count: 5,
+          count: 10,
           quizTypes: selectedQuizTypes,
           isReview: true, // Review mode: use ONLY existing materials
           sessionId,
@@ -146,39 +237,31 @@ export default function ReviewPage() {
         return;
       }
 
-      // For review, we still use the review cards system
-      // But we can also generate quiz questions from existing materials
-      const cardsResponse = await fetch('/api/review/cards');
+      const quizData = await quizResponse.json();
+      const questions = flattenQuestions(quizData.questions);
 
-      if (!cardsResponse.ok) {
-        const errorData = await cardsResponse.json().catch(() => ({}));
+      if (questions.length === 0) {
         setErrorType('generic');
-        setError(errorData.error || 'Failed to load review cards');
+        setError('No questions could be generated. Try selecting different quiz types or use flash cards.');
         setIsLoading(false);
         setView('select');
         return;
       }
 
-      const cardsData = await cardsResponse.json();
-      
-      if (!cardsData.cards || cardsData.cards.length === 0) {
-        setIsLoading(false);
-        setView('select');
-        return;
-      }
+      // Get material IDs from questions
+      const materialIds = questions.map(q => q.materialId).filter(Boolean) as string[];
 
-      const materialIds = cardsData.cards.map((c: ReviewCard) => c.material_id);
-
-      setSession({
-        cards: cardsData.cards,
+      setQuizSession({
+        questions,
         currentIndex: 0,
-        results: [],
+        answers: [],
         startTime: Date.now(),
+        questionStartTime: Date.now(),
         sessionId,
         materialIds,
       });
       setIsLoading(false);
-      setView('review');
+      setView('quiz');
     } catch (err) {
       console.error('Session start error:', err);
       setErrorType('generic');
@@ -186,7 +269,7 @@ export default function ReviewPage() {
       setIsLoading(false);
       setView('select');
     }
-  }, [selectedQuizTypes, conversationScenarioId]);
+  }, [selectedQuizTypes, useFlashCards, conversationScenarioId]);
 
   // Handle rating
   const handleRate = useCallback(async (rating: 'again' | 'hard' | 'good' | 'easy') => {
@@ -232,6 +315,154 @@ export default function ReviewPage() {
     }
   }, [session, isRating]);
 
+  // Handle quiz answer submission
+  const handleQuizSubmit = useCallback(async () => {
+    if (!quizSession) return;
+    
+    const question = quizSession.questions[quizSession.currentIndex];
+    const timeSpent = Date.now() - quizSession.questionStartTime;
+    
+    let userAnswer: string;
+    let correctAnswer: string;
+    let acceptableAnswers: string[] = [];
+
+    switch (question.type) {
+      case 'multiple_choice':
+        userAnswer = selectedAnswer || '';
+        correctAnswer = question.options[question.correctIndex];
+        break;
+      case 'true_false':
+        userAnswer = selectedAnswer || '';
+        correctAnswer = question.isTrue ? 'true' : 'false';
+        break;
+      case 'fill_blank':
+        userAnswer = fillAnswer;
+        correctAnswer = question.answer;
+        acceptableAnswers = question.acceptableAnswers || [];
+        break;
+      default:
+        return;
+    }
+
+    try {
+      const response = await fetch('/api/quiz/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionType: question.type,
+          userAnswer,
+          correctAnswer,
+          acceptableAnswers,
+          materialId: question.materialId,
+        }),
+      });
+
+      const result = await response.json();
+      
+      setQuestionFeedback({
+        isCorrect: result.isCorrect,
+        feedback: result.feedback || (result.isCorrect ? 'Correct!' : `Not quite. ${question.explanation}`),
+        score: result.score,
+      });
+      setShowFeedback(true);
+
+      // Update session
+      setQuizSession(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          answers: [
+            ...prev.answers,
+            {
+              isCorrect: result.isCorrect,
+              userAnswer,
+              feedback: result.feedback,
+              timeSpent,
+            },
+          ],
+        };
+      });
+    } catch (err) {
+      console.error('Answer submission error:', err);
+      // Still show feedback based on local check
+      const isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+      setQuestionFeedback({
+        isCorrect,
+        feedback: isCorrect ? 'Correct!' : `The correct answer was: ${correctAnswer}`,
+        score: isCorrect ? 1 : 0,
+      });
+      setShowFeedback(true);
+    }
+  }, [quizSession, selectedAnswer, fillAnswer]);
+
+  // Continue to next quiz question
+  const handleQuizContinue = useCallback(async () => {
+    if (!quizSession) return;
+    
+    if (quizSession.currentIndex >= quizSession.questions.length - 1) {
+      // Session complete
+      const correct = quizSession.answers.filter(a => a.isCorrect).length + (questionFeedback?.isCorrect ? 1 : 0);
+      const incorrect = quizSession.answers.filter(a => !a.isCorrect).length + (questionFeedback?.isCorrect ? 0 : 1);
+      const total = quizSession.questions.length;
+      const duration = Math.floor((Date.now() - quizSession.startTime) / 1000);
+
+      try {
+        // Update session with results
+        await fetch(`/api/learning-sessions/${quizSession.sessionId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            materialsCovered: quizSession.materialIds,
+            correctCount: correct,
+            incorrectCount: incorrect,
+            skippedCount: 0,
+            durationSeconds: duration,
+            completed: true,
+          }),
+        });
+
+        // Update memory summary
+        await fetch('/api/memory/summary', {
+          method: 'POST',
+        });
+
+        // Show feedback
+        setFeedbackData({
+          totalXP: correct * 5, // Estimate XP
+          correct,
+          incorrect,
+          total,
+          duration,
+        });
+        setView('feedback');
+      } catch (err) {
+        console.error('Session completion error:', err);
+        setFeedbackData({
+          totalXP: correct * 5,
+          correct,
+          incorrect,
+          total,
+          duration,
+        });
+        setView('feedback');
+      }
+      return;
+    }
+
+    setQuizSession(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        currentIndex: prev.currentIndex + 1,
+        questionStartTime: Date.now(),
+      };
+    });
+    setSelectedAnswer(null);
+    setFillAnswer('');
+    setShowFeedback(false);
+    setQuestionFeedback(null);
+  }, [quizSession, questionFeedback]);
+
   // Check if session is complete
   useEffect(() => {
     if (session && session.currentIndex >= session.cards.length && view === 'review') {
@@ -262,11 +493,26 @@ export default function ReviewPage() {
             method: 'POST',
           });
 
-          router.push(`/dashboard?reviewed=${session.results.length}&xp=${totalXP}`);
+          // Show feedback instead of redirecting immediately
+          setFeedbackData({
+            totalXP,
+            correct,
+            incorrect,
+            total: session.cards.length,
+            duration,
+          });
+          setView('feedback');
         } catch (err) {
           console.error('Session completion error:', err);
-          // Still redirect even if update fails
-          router.push(`/dashboard?reviewed=${session.results.length}&xp=${totalXP}`);
+          // Still show feedback even if update fails
+          setFeedbackData({
+            totalXP,
+            correct,
+            incorrect,
+            total: session.cards.length,
+            duration,
+          });
+          setView('feedback');
         }
       };
 
@@ -286,11 +532,59 @@ export default function ReviewPage() {
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-8 mb-6">
-          <QuizTypeSelector
-            onSelect={setSelectedQuizTypes}
-            defaultTypes={selectedQuizTypes}
-            disabled={isLoading}
-          />
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-2">Review Mode</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose how you want to review your vocabulary
+            </p>
+            
+            {/* Flash Cards Option */}
+            <div className="mb-6">
+              <button
+                onClick={() => {
+                  setUseFlashCards(!useFlashCards);
+                  if (!useFlashCards) {
+                    setSelectedQuizTypes([]);
+                  }
+                }}
+                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                  useFlashCards
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-card hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 flex-shrink-0 ${useFlashCards ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {useFlashCards ? (
+                      <LuCheckCircle className="w-5 h-5" />
+                    ) : (
+                      <LuCircle className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <LuBook className={`w-5 h-5 ${useFlashCards ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <h4 className={`font-semibold ${useFlashCards ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        Flash Cards
+                      </h4>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Review with traditional flash cards - reveal answers and rate your knowledge
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Quiz Types (only if flash cards not selected) */}
+            {!useFlashCards && (
+              <QuizTypeSelector
+                onSelect={setSelectedQuizTypes}
+                defaultTypes={selectedQuizTypes}
+                disabled={isLoading}
+              />
+            )}
+          </div>
         </div>
 
         <div className="flex justify-center gap-4">
@@ -302,7 +596,7 @@ export default function ReviewPage() {
           </button>
           <button
             onClick={startSession}
-            disabled={isLoading || selectedQuizTypes.length === 0}
+            disabled={isLoading || (!useFlashCards && selectedQuizTypes.length === 0)}
             className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             Start Review
@@ -381,8 +675,8 @@ export default function ReviewPage() {
     );
   }
 
-  // No cards to review
-  if (!session || session.cards.length === 0 || view !== 'review') {
+  // No cards to review (only for flash card mode)
+  if (view === 'review' && (!session || session.cards.length === 0)) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center bg-card border border-border rounded-2xl p-8">
@@ -410,8 +704,170 @@ export default function ReviewPage() {
     );
   }
 
+  // Feedback view
+  if (view === 'feedback' && feedbackData) {
+    const accuracy = feedbackData.total > 0 
+      ? Math.round((feedbackData.correct / feedbackData.total) * 100) 
+      : 0;
+    const minutes = Math.floor(feedbackData.duration / 60);
+    const seconds = feedbackData.duration % 60;
+
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="text-center mb-8">
+          <span className="flex justify-center mb-4">
+            <PiConfetti className="w-14 h-14 text-primary" />
+          </span>
+          <h1 className="text-3xl font-bold mb-2">Review Complete!</h1>
+          <p className="text-muted-foreground">
+            Great job! You&apos;ve reviewed {feedbackData.total} cards.
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="p-4 rounded-xl bg-card border border-border text-center">
+            <div className="text-2xl font-bold text-green-600">{feedbackData.correct}</div>
+            <div className="text-sm text-muted-foreground">Correct</div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border text-center">
+            <div className="text-2xl font-bold text-orange-600">{feedbackData.incorrect}</div>
+            <div className="text-sm text-muted-foreground">Needs Review</div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border text-center">
+            <div className="text-2xl font-bold text-primary">{accuracy}%</div>
+            <div className="text-sm text-muted-foreground">Accuracy</div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border text-center">
+            <div className="text-2xl font-bold text-blue-600">+{feedbackData.totalXP}</div>
+            <div className="text-sm text-muted-foreground">XP Earned</div>
+          </div>
+        </div>
+
+        {/* Time */}
+        <div className="bg-card border border-border rounded-xl p-4 mb-8 text-center">
+          <div className="text-sm text-muted-foreground mb-1">Time Spent</div>
+          <div className="text-lg font-semibold">
+            {minutes > 0 ? `${minutes}m ` : ''}{seconds}s
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => {
+              setView('select');
+              setSession(null);
+              setQuizSession(null);
+              setFeedbackData(null);
+              setSelectedAnswer(null);
+              setFillAnswer('');
+              setShowFeedback(false);
+              setQuestionFeedback(null);
+            }}
+            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+          >
+            Review More
+          </button>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="flex-1 py-3 rounded-xl border border-border hover:bg-accent"
+          >
+            Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Quiz question view
+  if (view === 'quiz' && quizSession) {
+    const question = quizSession.questions[quizSession.currentIndex];
+    const progress = ((quizSession.currentIndex + 1) / quizSession.questions.length) * 100;
+
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* Progress */}
+        <div className="mb-8">
+          <div className="flex justify-between text-sm text-muted-foreground mb-2">
+            <span className="font-medium">Question {quizSession.currentIndex + 1} of {quizSession.questions.length}</span>
+            <span className="text-green-600 dark:text-green-400 font-semibold">{quizSession.answers.filter(a => a.isCorrect).length} correct</span>
+          </div>
+          <div className="h-3 bg-muted rounded-full overflow-hidden shadow-inner">
+            <div 
+              className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500 ease-out shadow-sm"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Question card */}
+        <div className="bg-card border border-border rounded-2xl p-6 mb-6">
+          {question.type === 'multiple_choice' && (
+            <MultipleChoiceCard
+              question={question}
+              selectedAnswer={selectedAnswer}
+              onSelect={setSelectedAnswer}
+              showFeedback={showFeedback}
+            />
+          )}
+          {question.type === 'true_false' && (
+            <TrueFalseCard
+              question={question}
+              selectedAnswer={selectedAnswer}
+              onSelect={setSelectedAnswer}
+              showFeedback={showFeedback}
+            />
+          )}
+          {question.type === 'fill_blank' && (
+            <FillBlankCard
+              question={question}
+              answer={fillAnswer}
+              onAnswerChange={setFillAnswer}
+              showFeedback={showFeedback}
+            />
+          )}
+        </div>
+
+        {/* Feedback */}
+        {showFeedback && questionFeedback && (
+          <div
+            className={`p-4 rounded-xl mb-6 ${
+              questionFeedback.isCorrect
+                ? 'bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400'
+                : 'bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400'
+            }`}
+          >
+            {questionFeedback.feedback}
+          </div>
+        )}
+
+        {/* Action button */}
+        {!showFeedback ? (
+          <button
+            onClick={handleQuizSubmit}
+            disabled={
+              (question.type === 'fill_blank' && !fillAnswer.trim()) ||
+              (question.type !== 'fill_blank' && !selectedAnswer)
+            }
+            className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            Check Answer
+          </button>
+        ) : (
+          <button
+            onClick={handleQuizContinue}
+            className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+          >
+            {quizSession.currentIndex >= quizSession.questions.length - 1 ? 'Finish' : 'Continue'}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   // Session complete (handled in useEffect)
-  if (session.currentIndex >= session.cards.length) {
+  if (session && session.currentIndex >= session.cards.length && view === 'review') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center">
@@ -582,5 +1038,152 @@ function RatingButton({
       <div className="text-sm">{label}</div>
       <div className="text-xs opacity-70">{sublabel}</div>
     </button>
+  );
+}
+
+// Multiple Choice Question Component
+function MultipleChoiceCard({
+  question,
+  selectedAnswer,
+  onSelect,
+  showFeedback,
+}: {
+  question: MultipleChoiceQuestion;
+  selectedAnswer: string | null;
+  onSelect: (answer: string) => void;
+  showFeedback: boolean;
+}) {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-6">{question.question}</h2>
+      <div className="space-y-3">
+        {question.options.map((option, index) => {
+          const isSelected = selectedAnswer === option;
+          const isCorrect = index === question.correctIndex;
+          
+          let bgClass = 'bg-muted/50 hover:bg-muted';
+          if (showFeedback) {
+            if (isCorrect) {
+              bgClass = 'bg-green-500/20 border-green-500';
+            } else if (isSelected && !isCorrect) {
+              bgClass = 'bg-red-500/20 border-red-500';
+            }
+          } else if (isSelected) {
+            bgClass = 'bg-primary/10 border-primary';
+          }
+
+          return (
+            <button
+              key={index}
+              onClick={() => !showFeedback && onSelect(option)}
+              disabled={showFeedback}
+              className={`w-full p-4 rounded-xl border-2 border-transparent text-left transition-all ${bgClass}`}
+            >
+              <span className="font-medium">{String.fromCharCode(65 + index)}.</span>{' '}
+              {option}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// True/False Question Component
+function TrueFalseCard({
+  question,
+  selectedAnswer,
+  onSelect,
+  showFeedback,
+}: {
+  question: TrueFalseQuestion;
+  selectedAnswer: string | null;
+  onSelect: (answer: string) => void;
+  showFeedback: boolean;
+}) {
+  const correctAnswer = question.isTrue ? 'true' : 'false';
+
+  return (
+    <div>
+      <div className="text-sm text-muted-foreground mb-2">True or False?</div>
+      <h2 className="text-xl font-semibold mb-6">{question.statement}</h2>
+      <div className="grid grid-cols-2 gap-4">
+        {['true', 'false'].map((option) => {
+          const isSelected = selectedAnswer === option;
+          const isCorrect = option === correctAnswer;
+          
+          let bgClass = 'bg-muted/50 hover:bg-muted';
+          if (showFeedback) {
+            if (isCorrect) {
+              bgClass = 'bg-green-500/20 border-green-500';
+            } else if (isSelected && !isCorrect) {
+              bgClass = 'bg-red-500/20 border-red-500';
+            }
+          } else if (isSelected) {
+            bgClass = 'bg-primary/10 border-primary';
+          }
+
+          return (
+            <button
+              key={option}
+              onClick={() => !showFeedback && onSelect(option)}
+              disabled={showFeedback}
+              className={`p-6 rounded-xl border-2 border-transparent text-center font-semibold text-lg transition-all ${bgClass}`}
+            >
+              {option === 'true' ? '✓ True' : '✗ False'}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Fill in the Blank Question Component
+function FillBlankCard({
+  question,
+  answer,
+  onAnswerChange,
+  showFeedback,
+}: {
+  question: FillBlankQuestion;
+  answer: string;
+  onAnswerChange: (answer: string) => void;
+  showFeedback: boolean;
+}) {
+  const parts = question.sentence.split('{{blank}}');
+
+  return (
+    <div>
+      <div className="text-sm text-muted-foreground mb-2">Fill in the blank</div>
+      <div className="text-xl mb-6">
+        {parts[0]}
+        <input
+          type="text"
+          value={answer}
+          onChange={(e) => onAnswerChange(e.target.value)}
+          disabled={showFeedback}
+          placeholder="..."
+          className={`inline-block w-32 mx-1 px-3 py-1 rounded-lg border-2 text-center font-semibold ${
+            showFeedback
+              ? answer.toLowerCase() === question.answer.toLowerCase()
+                ? 'bg-green-500/20 border-green-500'
+                : 'bg-red-500/20 border-red-500'
+              : 'border-primary/50 focus:border-primary'
+          } outline-none`}
+        />
+        {parts[1]}
+      </div>
+      {question.hint && !showFeedback && (
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium">Hint:</span> {question.hint}
+        </p>
+      )}
+      {showFeedback && answer.toLowerCase() !== question.answer.toLowerCase() && (
+        <p className="text-sm text-muted-foreground mt-2">
+          <span className="font-medium">Correct answer:</span> {question.answer}
+        </p>
+      )}
+    </div>
   );
 }
