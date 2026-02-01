@@ -18,6 +18,8 @@ import {
   LuTrash2,
   LuMailOpen,
   LuBadgePlus,
+  LuRefreshCw,
+  LuClock,
 } from '@/components/ui/icons';
 import ImportMaterialWizard from '@/components/memory/ImportMaterialWizard';
 
@@ -68,6 +70,7 @@ interface Memory {
   summary: string;
   goals: string[];
   top_categories: MaterialCategory[];
+  summary_updated_at: string | null;
 }
 
 // ===== Constants =====
@@ -96,6 +99,40 @@ const CATEGORIES: { value: MaterialCategory | 'all'; label: string }[] = [
 
 const CEFR_LEVELS: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
+// ===== Helper Functions =====
+
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) {
+    return 'just now';
+  }
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}m ago`;
+  }
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  }
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) {
+    return `${diffInDays}d ago`;
+  }
+  
+  // For older dates, show the actual date
+  return date.toLocaleDateString(undefined, { 
+    month: 'short', 
+    day: 'numeric',
+    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+  });
+}
+
 // ===== Component =====
 
 export default function MemoryPage() {
@@ -121,6 +158,7 @@ export default function MemoryPage() {
   // Loading states
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshingSummary, setIsRefreshingSummary] = useState(false);
 
   // ===== Data Fetching =====
 
@@ -245,6 +283,33 @@ export default function MemoryPage() {
     }
   };
 
+  const handleRefreshSummary = async () => {
+    setIsRefreshingSummary(true);
+    try {
+      const response = await fetch('/api/memory/summary', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Update memory with new summary
+        setMemory(prev => prev ? {
+          ...prev,
+          summary: data.summary,
+          summary_updated_at: data.updatedAt,
+        } : null);
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to refresh summary');
+      }
+    } catch (err) {
+      console.error('Summary refresh error:', err);
+      alert('Failed to refresh summary');
+    } finally {
+      setIsRefreshingSummary(false);
+    }
+  };
+
   const handleGenerate = async (options: {
     categories: MaterialCategory[];
     cefrLevel: CEFRLevel;
@@ -264,6 +329,8 @@ export default function MemoryPage() {
         await loadMaterials();
         await loadMemory();
         alert(`Generated ${data.count} new materials!`);
+        // Auto-trigger summary update after generating new materials
+        handleRefreshSummary();
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to generate materials');
@@ -362,9 +429,30 @@ export default function MemoryPage() {
       {/* Memory Summary */}
       {memory && memory.summary && (
         <div className="bg-card border border-border rounded-2xl p-6 mb-8">
-          <h3 className="font-semibold mb-2 flex items-center gap-2">
-            <LuBrain className="w-5 h-5 text-primary" /> Learning Summary
-          </h3>
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-semibold flex items-center gap-2">
+              <LuBrain className="w-5 h-5 text-primary" /> Learning Summary
+            </h3>
+            <div className="flex items-center gap-3">
+              {/* Last Updated */}
+              {memory.summary_updated_at && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <LuClock className="w-3 h-3" />
+                  Updated {formatRelativeTime(memory.summary_updated_at)}
+                </span>
+              )}
+              {/* Refresh Button */}
+              <button
+                onClick={handleRefreshSummary}
+                disabled={isRefreshingSummary}
+                className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium flex items-center gap-1.5 hover:bg-primary/20 transition-colors disabled:opacity-50"
+                title="Refresh summary with AI"
+              >
+                <LuRefreshCw className={`w-3.5 h-3.5 ${isRefreshingSummary ? 'animate-spin' : ''}`} />
+                {isRefreshingSummary ? 'Updating...' : 'Refresh'}
+              </button>
+            </div>
+          </div>
           <p className="text-muted-foreground text-sm">{memory.summary}</p>
           {memory.goals && memory.goals.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -463,6 +551,8 @@ export default function MemoryPage() {
           onSave={async (data) => {
             await handleAddMaterial(data);
             setShowImportWizard(false);
+            // Auto-trigger summary update after importing materials
+            handleRefreshSummary();
           }}
           isSaving={isSaving}
         />

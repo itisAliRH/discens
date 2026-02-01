@@ -93,6 +93,7 @@ export async function POST(request: Request) {
       summary: summary.slice(0, 1000),
       goals: [`Learn ${targetLanguage === 'de' ? 'German' : 'English'}`],
       top_categories: selectedCategories.length > 0 ? selectedCategories : ['daily_life', 'travel'],
+      summary_updated_at: new Date().toISOString(),
     };
 
     if (!existingMemory) {

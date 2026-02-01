@@ -115,6 +115,7 @@ export interface Database {
           mastered_materials: number;
           created_at: string;
           updated_at: string;
+          summary_updated_at: string | null;
         };
         Insert: {
           id?: string;
@@ -126,6 +127,7 @@ export interface Database {
           mastered_materials?: number;
           created_at?: string;
           updated_at?: string;
+          summary_updated_at?: string | null;
         };
         Update: {
           id?: string;
@@ -136,6 +138,7 @@ export interface Database {
           total_materials?: number;
           mastered_materials?: number;
           updated_at?: string;
+          summary_updated_at?: string | null;
         };
       };
       materials: {
