@@ -10,18 +10,18 @@ const intlMiddleware = createMiddleware({
   localePrefix: 'as-needed', // Don't show /en in the URL for English
 });
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   // Handle locale routing first
   const intlResponse = intlMiddleware(request);
-  
+
   // Then handle Supabase session
   const supabaseResponse = await updateSession(request);
-  
+
   // If Supabase returned a redirect (e.g., to login), use that
   if (supabaseResponse.status === 307 || supabaseResponse.status === 308) {
     return supabaseResponse;
   }
-  
+
   // Otherwise, use the intl response
   return intlResponse;
 }
@@ -33,6 +33,3 @@ export const config = {
   // - Static files (images, etc.)
   matcher: ['/((?!api|_next|.*\\..*).*)'],
 };
-
-// Ensure middleware runs on edge runtime
-export const runtime = 'edge';
