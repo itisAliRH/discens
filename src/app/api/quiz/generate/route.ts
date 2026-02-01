@@ -141,9 +141,9 @@ export async function POST(request: Request) {
           .eq('type', 'word');
         
         existingWords = new Set(
-          (existingMaterials || []).map((m: { content: { word?: string } }) => 
-            m.content?.word?.toLowerCase().trim()
-          ).filter(Boolean)
+          (existingMaterials || [])
+            .map((m: { content: { word?: string } }) => m.content?.word?.toLowerCase().trim())
+            .filter((word): word is string => Boolean(word))
         );
       }
 
