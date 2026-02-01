@@ -769,11 +769,13 @@ function MaterialCard({ material, onEdit, onDelete }: {
 
           {/* Categories */}
           <div className="flex gap-2 mt-3">
-            {material.categories.map(cat => (
-              <span key={cat} className="px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground capitalize">
-                {cat.replace('_', ' ')}
-              </span>
-            ))}
+            {material.categories
+              .filter(cat => cat != null && typeof cat === 'string')
+              .map(cat => (
+                <span key={cat} className="px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground capitalize">
+                  {cat.replace('_', ' ')}
+                </span>
+              ))}
           </div>
         </div>
 

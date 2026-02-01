@@ -34,7 +34,7 @@ interface SessionState {
   newMaterialIds: string[];
 }
 
-type ViewState = 'select' | 'quiz' | 'loading';
+type ViewState = 'select' | 'quiz' | 'loading' | 'feedback';
 
 export default function LearnPage() {
   const router = useRouter();
@@ -56,6 +56,13 @@ export default function LearnPage() {
   const [customLearningPrompt, setCustomLearningPrompt] = useState('');
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const placeholderExamples = usePlaceholderExamples();
+  const [completionData, setCompletionData] = useState<{
+    correct: number;
+    incorrect: number;
+    total: number;
+    newMaterialsCount: number;
+    duration: number;
+  } | null>(null);
 
   // Get conversation scenario ID from URL if present
   const conversationScenarioId = searchParams.get('scenario');
@@ -274,7 +281,7 @@ export default function LearnPage() {
     if (!session) return;
     
     if (session.currentIndex >= session.questions.length - 1) {
-      // Session complete - update session and redirect
+      // Session complete - update session and show feedback
       const correct = session.answers.filter(a => a.isCorrect).length + (feedbackData?.isCorrect ? 1 : 0);
       const incorrect = session.answers.filter(a => !a.isCorrect).length + (feedbackData?.isCorrect ? 0 : 1);
       const total = session.questions.length;
@@ -295,13 +302,31 @@ export default function LearnPage() {
           }),
         });
 
-        // Materials are already saved in the quiz generation API
-        // Redirect to dashboard with results
-        router.push(`/dashboard?learned=${correct}&total=${total}&newMaterials=${session.newMaterialIds.length}`);
+        // Update memory summary
+        await fetch('/api/memory/summary', {
+          method: 'POST',
+        });
+
+        // Show feedback instead of redirecting immediately
+        setCompletionData({
+          correct,
+          incorrect,
+          total,
+          newMaterialsCount: session.newMaterialIds.length,
+          duration,
+        });
+        setView('feedback');
       } catch (err) {
         console.error('Session completion error:', err);
-        // Still redirect even if update fails
-        router.push(`/dashboard?learned=${correct}&total=${total}`);
+        // Still show feedback even if update fails
+        setCompletionData({
+          correct,
+          incorrect,
+          total,
+          newMaterialsCount: session.newMaterialIds.length,
+          duration,
+        });
+        setView('feedback');
       }
       return;
     }
@@ -464,6 +489,95 @@ export default function LearnPage() {
               Back to Dashboard
             </button>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // Feedback view
+  if (view === 'feedback' && completionData) {
+    const accuracy = completionData.total > 0 
+      ? Math.round((completionData.correct / completionData.total) * 100) 
+      : 0;
+    const minutes = Math.floor(completionData.duration / 60);
+    const seconds = completionData.duration % 60;
+
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="text-center mb-8">
+          <span className="flex justify-center mb-4">
+            <LuBookOpen className="w-14 h-14 text-primary" />
+          </span>
+          <h1 className="text-3xl font-bold mb-2">Learning Session Complete!</h1>
+          <p className="text-muted-foreground">
+            Great work! You&apos;ve learned {completionData.newMaterialsCount} new materials.
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="p-4 rounded-xl bg-card border border-border text-center">
+            <div className="text-2xl font-bold text-green-600">{completionData.correct}</div>
+            <div className="text-sm text-muted-foreground">Correct</div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border text-center">
+            <div className="text-2xl font-bold text-orange-600">{completionData.incorrect}</div>
+            <div className="text-sm text-muted-foreground">Incorrect</div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border text-center">
+            <div className="text-2xl font-bold text-primary">{accuracy}%</div>
+            <div className="text-sm text-muted-foreground">Accuracy</div>
+          </div>
+          <div className="p-4 rounded-xl bg-card border border-border text-center">
+            <div className="text-2xl font-bold text-blue-600">{completionData.newMaterialsCount}</div>
+            <div className="text-sm text-muted-foreground">New Words</div>
+          </div>
+        </div>
+
+        {/* Time */}
+        <div className="bg-card border border-border rounded-xl p-4 mb-8 text-center">
+          <div className="text-sm text-muted-foreground mb-1">Time Spent</div>
+          <div className="text-lg font-semibold">
+            {minutes > 0 ? `${minutes}m ` : ''}{seconds}s
+          </div>
+        </div>
+
+        {/* Tips */}
+        <div className="bg-primary/10 border border-primary/20 rounded-xl p-6 mb-8">
+          <h3 className="font-semibold mb-2 flex items-center gap-2">
+            <span>💡</span> Learning Tips
+          </h3>
+          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+            <li>Review the new words in your memory to reinforce learning</li>
+            <li>Practice these words again in the review section</li>
+            <li>Use them in conversations to improve retention</li>
+          </ul>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => router.push('/memory')}
+            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-semibold"
+          >
+            View New Words
+          </button>
+          <button
+            onClick={() => {
+              setView('select');
+              setSession(null);
+              setCompletionData(null);
+            }}
+            className="flex-1 py-3 rounded-xl border border-border hover:bg-accent"
+          >
+            Learn More
+          </button>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="flex-1 py-3 rounded-xl border border-border hover:bg-accent"
+          >
+            Dashboard
+          </button>
         </div>
       </div>
     );
