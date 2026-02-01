@@ -52,29 +52,51 @@ function createCacheKey(config: CreateAgentRequest): string {
  * Create a custom ElevenLabs agent for a specific scenario
  */
 export async function POST(request: Request) {
+  console.log('[Agent API] POST request received');
   try {
     if (!ELEVENLABS_API_KEY) {
+      console.error('[Agent API] ElevenLabs API key not configured');
       return NextResponse.json(
         { error: 'ElevenLabs API key not configured' },
         { status: 500 }
       );
     }
 
+    console.log('[Agent API] Creating Supabase client');
     const supabase = await createUntypedServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
+      console.error('[Agent API] User not authenticated');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('[Agent API] Fetching user profile for user:', user.id);
     // Get user's profile for language preferences
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('target_language, native_language')
       .eq('id', user.id)
       .single();
 
-    const body: CreateAgentRequest = await request.json();
+    if (profileError) {
+      console.warn('Could not fetch user profile:', profileError);
+      // Continue with defaults, don't fail
+    }
+
+    console.log('[Agent API] Parsing request body');
+    let body: CreateAgentRequest;
+    try {
+      body = await request.json();
+      console.log('[Agent API] Request body parsed:', body);
+    } catch (parseError) {
+      console.error('[Agent API] Failed to parse request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body', details: parseError instanceof Error ? parseError.message : String(parseError) },
+        { status: 400 }
+      );
+    }
+    
     const {
       scenarioName,
       scenarioDescription,
@@ -83,6 +105,15 @@ export async function POST(request: Request) {
       customPrompt,
       voiceId,
     } = body;
+
+    // Validate required fields
+    if (!scenarioName || !scenarioDescription) {
+      console.error('Missing required fields:', { scenarioName, scenarioDescription });
+      return NextResponse.json(
+        { error: 'Missing required fields: scenarioName and scenarioDescription' },
+        { status: 400 }
+      );
+    }
 
     const languageName = targetLanguage === 'de' ? 'German' : 'English';
     const nativeLanguageName = profile?.native_language === 'de' ? 'German' : 'English';
@@ -101,62 +132,150 @@ export async function POST(request: Request) {
       });
     }
 
-    // Select voice
-    const selectedVoiceId = voiceId || DEFAULT_VOICE_ID;
+    // Select voice - map friendly name to actual voice ID
+    let selectedVoiceId: string;
+    if (voiceId && typeof voiceId === 'string') {
+      // Check if it's a friendly name that needs mapping
+      const voiceMap = VOICES[targetLanguage as keyof typeof VOICES] || VOICES.de;
+      selectedVoiceId = voiceMap[voiceId as keyof typeof voiceMap] || voiceId;
+    } else {
+      selectedVoiceId = DEFAULT_VOICE_ID;
+    }
+    console.log('[Agent API] Selected voice ID:', selectedVoiceId, 'from input:', voiceId);
 
     // Build the system prompt for the agent
-    const systemPrompt = customPrompt || buildScenarioPrompt({
-      scenarioName,
-      scenarioDescription,
-      environment,
-      languageName,
-      nativeLanguageName,
-    });
+    console.log('[Agent API] Building scenario prompt with:', { scenarioName, environment, languageName, nativeLanguageName });
+    let systemPrompt: string;
+    try {
+      systemPrompt = customPrompt || buildScenarioPrompt({
+        scenarioName,
+        scenarioDescription,
+        environment,
+        languageName,
+        nativeLanguageName,
+      });
+      console.log('[Agent API] System prompt created, length:', systemPrompt.length);
+    } catch (promptError) {
+      console.error('[Agent API] Failed to build scenario prompt:', promptError);
+      return NextResponse.json(
+        { error: 'Failed to build scenario prompt', details: promptError instanceof Error ? promptError.message : String(promptError) },
+        { status: 500 }
+      );
+    }
 
     // Build the first message based on scenario
-    const firstMessage = buildFirstMessage(scenarioName, scenarioDescription, languageName);
+    let firstMessage: string;
+    try {
+      firstMessage = buildFirstMessage(scenarioName, scenarioDescription, languageName);
+      console.log('[Agent API] First message:', firstMessage);
+    } catch (messageError) {
+      console.error('[Agent API] Failed to build first message:', messageError);
+      return NextResponse.json(
+        { error: 'Failed to build first message', details: messageError instanceof Error ? messageError.message : String(messageError) },
+        { status: 500 }
+      );
+    }
 
     // Create the agent via ElevenLabs API
+    const agentPayload = {
+      name: `Discens - ${scenarioName} - ${user.id.slice(0, 8)}`,
+      conversation_config: {
+        agent: {
+          first_message: firstMessage,
+          language: targetLanguage,
+          prompt: {
+            prompt: systemPrompt,
+            llm: 'gpt-4o-mini',
+            temperature: 0.7,
+            max_tokens: 500,
+          },
+        },
+        tts: {
+          voice_id: selectedVoiceId,
+          model_id: 'eleven_turbo_v2_5',
+          stability: 0.5,
+          similarity_boost: 0.75,
+        },
+      },
+    };
+
+    let payloadJson: string;
+    try {
+      payloadJson = JSON.stringify(agentPayload);
+      console.log('[Agent API] Agent payload serialized successfully');
+    } catch (serializeError) {
+      console.error('[Agent API] Failed to serialize agent payload:', serializeError);
+      return NextResponse.json(
+        { error: 'Failed to serialize request payload', details: serializeError instanceof Error ? serializeError.message : String(serializeError) },
+        { status: 500 }
+      );
+    }
+
+    console.log('[Agent API] Sending request to ElevenLabs API');
     const response = await fetch(ELEVENLABS_API_URL, {
       method: 'POST',
       headers: {
         'xi-api-key': ELEVENLABS_API_KEY,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: `Discens - ${scenarioName} - ${user.id.slice(0, 8)}`,
-        conversation_config: {
-          agent: {
-            first_message: firstMessage,
-            language: targetLanguage,
-            prompt: {
-              prompt: systemPrompt,
-              llm: 'gpt-4o-mini',
-              temperature: 0.7,
-              max_tokens: 500,
-            },
-          },
-          tts: {
-            voice_id: selectedVoiceId,
-            model_id: 'eleven_turbo_v2_5',
-            stability: 0.5,
-            similarity_boost: 0.75,
-          },
-        },
-      }),
+      body: payloadJson,
     });
 
+    console.log('[Agent API] ElevenLabs response status:', response.status, response.statusText);
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('ElevenLabs agent creation error:', errorData);
+      console.error('ElevenLabs agent creation error:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData,
+        requestBody: {
+          name: `Discens - ${scenarioName} - ${user.id.slice(0, 8)}`,
+          conversation_config: {
+            agent: {
+              first_message: firstMessage,
+              language: targetLanguage,
+              prompt: {
+                prompt: systemPrompt.substring(0, 100) + '...',
+                llm: 'gpt-4o-mini',
+                temperature: 0.7,
+                max_tokens: 500,
+              },
+            },
+            tts: {
+              voice_id: selectedVoiceId,
+              model_id: 'eleven_turbo_v2_5',
+              stability: 0.5,
+              similarity_boost: 0.75,
+            },
+          },
+        },
+      });
       return NextResponse.json(
-        { error: 'Failed to create voice agent' },
+        { error: 'Failed to create voice agent', details: errorData },
         { status: 500 }
       );
     }
 
-    const data = await response.json();
+    let data: any;
+    try {
+      data = await response.json();
+      console.log('[Agent API] ElevenLabs response data:', { agent_id: data.agent_id });
+    } catch (parseError) {
+      console.error('[Agent API] Failed to parse ElevenLabs response:', parseError);
+      return NextResponse.json(
+        { error: 'Failed to parse ElevenLabs response', details: parseError instanceof Error ? parseError.message : String(parseError) },
+        { status: 500 }
+      );
+    }
+    
     const agentId = data.agent_id;
+    if (!agentId) {
+      console.error('[Agent API] No agent_id in ElevenLabs response');
+      return NextResponse.json(
+        { error: 'No agent_id returned from ElevenLabs', details: data },
+        { status: 500 }
+      );
+    }
 
     // Get signed URL for authenticated WebSocket connection
     const signedUrlResponse = await fetch(
@@ -176,8 +295,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const signedUrlData = await signedUrlResponse.json();
+    let signedUrlData: any;
+    try {
+      signedUrlData = await signedUrlResponse.json();
+      console.log('[Agent API] Signed URL response received');
+    } catch (parseError) {
+      console.error('[Agent API] Failed to parse signed URL response:', parseError);
+      return NextResponse.json(
+        { error: 'Failed to parse signed URL response', details: parseError instanceof Error ? parseError.message : String(parseError) },
+        { status: 500 }
+      );
+    }
+    
     const signedUrl = signedUrlData.signed_url;
+    if (!signedUrl) {
+      console.error('[Agent API] No signed_url in response');
+      return NextResponse.json(
+        { error: 'No signed_url returned', details: signedUrlData },
+        { status: 500 }
+      );
+    }
 
     // Cache the agent for 1 hour
     agentCache.set(cacheKey, {
@@ -186,6 +323,7 @@ export async function POST(request: Request) {
       expiresAt: Date.now() + 3600000, // 1 hour
     });
 
+    console.log('[Agent API] Agent created successfully:', { agentId, cached: false });
     return NextResponse.json({
       agentId,
       signedUrl,
@@ -194,9 +332,19 @@ export async function POST(request: Request) {
       cached: false,
     });
   } catch (error) {
-    console.error('Voice agent creation error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('Voice agent creation error:', {
+      message: errorMessage,
+      stack: errorStack,
+      error,
+    });
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: errorMessage,
+        type: error instanceof Error ? 'Error' : typeof error,
+      },
       { status: 500 }
     );
   }
