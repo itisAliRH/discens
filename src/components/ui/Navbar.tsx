@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
 import LanguageSelector from './LanguageSelector';
@@ -82,9 +83,13 @@ export default function Navbar() {
           {/* Left: Logo and App Name */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-                D
-              </div>
+              <Image
+                src="/favicon.png"
+                alt="Discens"
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-xl object-contain"
+              />
               <span className="font-bold text-xl hidden sm:inline">Discens</span>
             </Link>
 
