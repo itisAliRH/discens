@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   LuArrowLeft,
   LuSave,
@@ -11,10 +12,14 @@ import {
   LuPalette,
   LuTarget,
   LuGamepad2,
+  LuTriangleAlert,
+  LuTrash2,
+  LuRotateCcw,
 } from 'react-icons/lu';
 import ProfilePhotoUpload from '@/components/ui/ProfilePhotoUpload';
 import { FadeSlideUp, StaggeredContainer, StaggeredItem } from '@/components/ui/AnimatedContainer';
 import { Skeleton } from '@/components/ui/Skeleton';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import type { Profile, QuizType, LanguageCode } from '@/types/database';
 import { motion } from 'framer-motion';
 
@@ -30,11 +35,19 @@ const QUIZ_TYPES: { value: QuizType; label: string; description: string }[] = [
 
 export default function ProfileEditPage() {
   const router = useRouter();
+  const t = useTranslations('profile.account');
+  const tCommon = useTranslations('common');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // Account management state
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state
   const [fullName, setFullName] = useState('');
@@ -132,6 +145,56 @@ export default function ProfileEditPage() {
     setPreferredQuizTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
+  };
+
+  const handleResetAccount = async () => {
+    setIsResetting(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/account?action=reset', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || t('resetError'));
+      }
+
+      // Success - user will be signed out and redirected
+      setShowResetModal(false);
+      // The API route signs out the user, so we'll redirect
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('resetError'));
+      setIsResetting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/account?action=delete', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || t('deleteError'));
+      }
+
+      // Success - user will be signed out and redirected
+      setShowDeleteModal(false);
+      // The API route signs out the user, so we'll redirect
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('deleteError'));
+      setIsDeleting(false);
+    }
   };
 
   if (isLoading) {
@@ -471,6 +534,70 @@ export default function ProfileEditPage() {
             </div>
           </motion.div>
         </StaggeredItem>
+
+        {/* Danger Zone */}
+        <StaggeredItem>
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            className="p-6 rounded-2xl bg-card border-2 border-red-500/20"
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
+                <LuTriangleAlert className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold mb-1">{t('dangerZone')}</h2>
+                <p className="text-sm text-muted-foreground">{t('dangerZoneDesc')}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Reset Account */}
+              <div className="p-4 rounded-xl border border-border bg-card/50">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-1 flex items-center gap-2">
+                      <LuRotateCcw className="w-4 h-4 text-orange-500" />
+                      {t('resetAccount')}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{t('resetAccountDesc')}</p>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowResetModal(true)}
+                  disabled={isResetting || isDeleting}
+                  className="px-4 py-2 rounded-lg border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {t('resetButton')}
+                </motion.button>
+              </div>
+
+              {/* Delete Account */}
+              <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-1 flex items-center gap-2">
+                      <LuTrash2 className="w-4 h-4 text-red-500" />
+                      {t('deleteAccount')}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{t('deleteAccountDesc')}</p>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={isResetting || isDeleting}
+                  className="px-4 py-2 rounded-lg border border-red-500/50 text-red-500 hover:bg-red-500/10 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {t('deleteButton')}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </StaggeredItem>
       </StaggeredContainer>
 
       {/* Save Button (Mobile) */}
@@ -486,6 +613,34 @@ export default function ProfileEditPage() {
           {isSaving ? 'Saving...' : 'Save Changes'}
         </motion.button>
       </div>
+
+      {/* Reset Account Modal */}
+      <ConfirmationModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onConfirm={handleResetAccount}
+        title={t('resetAccountConfirm')}
+        message={t('resetAccountMessage')}
+        confirmText={t('resetButton')}
+        cancelText={tCommon('cancel')}
+        confirmButtonVariant="danger"
+        isLoading={isResetting}
+      />
+
+      {/* Delete Account Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+        title={t('deleteAccountConfirm')}
+        message={t('deleteAccountMessage')}
+        confirmText={t('deleteButton')}
+        cancelText={tCommon('cancel')}
+        confirmButtonVariant="danger"
+        requireTextConfirmation={true}
+        confirmationText="DELETE"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
