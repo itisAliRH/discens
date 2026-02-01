@@ -1,5 +1,5 @@
 import createMiddleware from 'next-intl/middleware';
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest } from 'next/server';
 import { locales, defaultLocale } from './src/i18n/config';
 import { updateSession } from './src/lib/supabase/middleware';
 
@@ -33,3 +33,6 @@ export const config = {
   // - Static files (images, etc.)
   matcher: ['/((?!api|_next|.*\\..*).*)'],
 };
+
+// Ensure middleware runs on edge runtime
+export const runtime = 'edge';
