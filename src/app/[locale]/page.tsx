@@ -15,6 +15,7 @@ import {
   LuTrophy,
   LuGlobe,
 } from '@/components/ui/icons';
+import PricingSection from '@/components/pricing/PricingSection';
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -172,6 +173,13 @@ export default function HomePage() {
               description="Have real conversations with AI tutors in everyday scenarios. Build confidence naturally."
             />
           </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 md:py-32 bg-card/50">
+        <div className="max-w-6xl mx-auto px-4">
+          <PricingSection />
         </div>
       </section>
 
