@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { MultipleChoiceQuestion, TrueFalseQuestion, FillBlankQuestion, QuizBatch } from '@/lib/ai/quiz';
+import type { QuizType } from '@/types/database';
+import QuizTypeSelector from '@/components/quiz/QuizTypeSelector';
 import {
   LuLock,
   LuFileText,
@@ -26,11 +28,17 @@ interface SessionState {
   }>;
   startTime: number;
   questionStartTime: number;
+  sessionId: string;
+  newMaterialIds: string[];
 }
+
+type ViewState = 'select' | 'quiz' | 'loading';
 
 export default function LearnPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const [view, setView] = useState<ViewState>('select');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<'auth' | 'setup' | 'materials' | 'generic'>('generic');
   const [session, setSession] = useState<SessionState | null>(null);
@@ -42,69 +50,121 @@ export default function LearnPage() {
     feedback: string;
     score: number;
   } | null>(null);
+  const [selectedQuizTypes, setSelectedQuizTypes] = useState<QuizType[]>(['multiple_choice', 'fill_blank']);
 
-  // Fetch and start quiz
-  useEffect(() => {
-    async function loadQuiz() {
-      try {
-        const response = await fetch('/api/quiz/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            count: 5,
-            quizTypes: ['multiple_choice', 'fill_blank', 'true_false'],
-            isReview: false,
-          }),
-        });
+  // Get conversation scenario ID from URL if present
+  const conversationScenarioId = searchParams.get('scenario');
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          
-          if (response.status === 401) {
-            setErrorType('auth');
-            setError('Please log in to start learning');
-          } else if (response.status === 404) {
-            setErrorType('setup');
-            setError('Complete your profile setup first');
-          } else {
-            setErrorType('generic');
-            setError(errorData.error || 'Failed to load quiz');
-          }
-          setIsLoading(false);
-          return;
-        }
-
-        const data = await response.json();
-        const questions = flattenQuestions(data.questions);
-
-        if (questions.length === 0) {
-          setErrorType('materials');
-          setError('No materials available yet');
-          setIsLoading(false);
-          return;
-        }
-
-        // Shuffle questions
-        const shuffled = questions.sort(() => Math.random() - 0.5);
-
-        setSession({
-          questions: shuffled,
-          currentIndex: 0,
-          answers: [],
-          startTime: Date.now(),
-          questionStartTime: Date.now(),
-        });
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Quiz load error:', err);
-        setErrorType('generic');
-        setError(err instanceof Error ? err.message : 'Failed to load quiz');
-        setIsLoading(false);
-      }
+  // Start learning session
+  const startSession = useCallback(async () => {
+    if (selectedQuizTypes.length === 0) {
+      setError('Please select at least one quiz type');
+      setErrorType('generic');
+      return;
     }
 
-    loadQuiz();
-  }, []);
+    setIsLoading(true);
+    setError(null);
+    setView('loading');
+
+    try {
+      // Create learning session
+      const sessionResponse = await fetch('/api/learning-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionType: 'learn',
+          quizTypes: selectedQuizTypes,
+          conversationScenarioId: conversationScenarioId || undefined,
+        }),
+      });
+
+      if (!sessionResponse.ok) {
+        const errorData = await sessionResponse.json().catch(() => ({}));
+        
+        if (sessionResponse.status === 401) {
+          setErrorType('auth');
+          setError('Please log in to start learning');
+        } else if (sessionResponse.status === 404) {
+          setErrorType('setup');
+          setError('Complete your profile setup first');
+        } else {
+          setErrorType('generic');
+          setError(errorData.error || 'Failed to create session');
+        }
+        setIsLoading(false);
+        setView('select');
+        return;
+      }
+
+      const sessionData = await sessionResponse.json();
+      const sessionId = sessionData.session.id;
+
+      // Generate quiz with NEW materials
+      const quizResponse = await fetch('/api/quiz/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          count: 5,
+          quizTypes: selectedQuizTypes,
+          isReview: false,
+          sessionId,
+          conversationScenarioId: conversationScenarioId || undefined,
+          createNewMaterials: true, // Create NEW materials for learn sessions
+        }),
+      });
+
+      if (!quizResponse.ok) {
+        const errorData = await quizResponse.json().catch(() => ({}));
+        
+        if (quizResponse.status === 401) {
+          setErrorType('auth');
+          setError('Please log in to start learning');
+        } else if (quizResponse.status === 404) {
+          setErrorType('setup');
+          setError('Complete your profile setup first');
+        } else {
+          setErrorType('generic');
+          setError(errorData.error || 'Failed to generate quiz');
+        }
+        setIsLoading(false);
+        setView('select');
+        return;
+      }
+
+      const quizData = await quizResponse.json();
+      const questions = flattenQuestions(quizData.questions);
+
+      if (questions.length === 0) {
+        setErrorType('materials');
+        setError('No materials available yet');
+        setIsLoading(false);
+        setView('select');
+        return;
+      }
+
+      // Shuffle questions
+      const shuffled = questions.sort(() => Math.random() - 0.5);
+
+      setSession({
+        questions: shuffled,
+        currentIndex: 0,
+        answers: [],
+        startTime: Date.now(),
+        questionStartTime: Date.now(),
+        sessionId,
+        newMaterialIds: quizData.newMaterialIds || [],
+      });
+      setIsLoading(false);
+      setView('quiz');
+    } catch (err) {
+      console.error('Session start error:', err);
+      setErrorType('generic');
+      setError(err instanceof Error ? err.message : 'Failed to start session');
+      setIsLoading(false);
+      setView('select');
+    }
+  }, [selectedQuizTypes, conversationScenarioId]);
 
   // Flatten quiz batch into array of questions
   function flattenQuestions(batch: QuizBatch): Question[] {
@@ -204,16 +264,39 @@ export default function LearnPage() {
   }, [session, selectedAnswer, fillAnswer]);
 
   // Continue to next question
-  const handleContinue = useCallback(() => {
+  const handleContinue = useCallback(async () => {
     if (!session) return;
     
     if (session.currentIndex >= session.questions.length - 1) {
-      // Session complete - show results
+      // Session complete - update session and redirect
       const correct = session.answers.filter(a => a.isCorrect).length + (feedbackData?.isCorrect ? 1 : 0);
+      const incorrect = session.answers.filter(a => !a.isCorrect).length + (feedbackData?.isCorrect ? 0 : 1);
       const total = session.questions.length;
-      
-      // Redirect to results (for now, just go back to dashboard)
-      router.push(`/dashboard?learned=${correct}&total=${total}`);
+      const duration = Math.floor((Date.now() - session.startTime) / 1000);
+
+      try {
+        // Update session with results
+        await fetch(`/api/learning-sessions/${session.sessionId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            materialsCovered: session.newMaterialIds,
+            correctCount: correct,
+            incorrectCount: incorrect,
+            skippedCount: 0,
+            durationSeconds: duration,
+            completed: true,
+          }),
+        });
+
+        // Materials are already saved in the quiz generation API
+        // Redirect to dashboard with results
+        router.push(`/dashboard?learned=${correct}&total=${total}&newMaterials=${session.newMaterialIds.length}`);
+      } catch (err) {
+        console.error('Session completion error:', err);
+        // Still redirect even if update fails
+        router.push(`/dashboard?learned=${correct}&total=${total}`);
+      }
       return;
     }
 
@@ -231,8 +314,46 @@ export default function LearnPage() {
     setFeedbackData(null);
   }, [session, feedbackData, router]);
 
+  // Quiz type selection view
+  if (view === 'select') {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold mb-2">Start Learning</h1>
+          <p className="text-muted-foreground">
+            Choose how you want to practice. New materials will be created based on your memory and language level.
+          </p>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-8 mb-6">
+          <QuizTypeSelector
+            onSelect={setSelectedQuizTypes}
+            defaultTypes={selectedQuizTypes}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="px-6 py-3 rounded-xl border border-border hover:bg-accent"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={startSession}
+            disabled={isLoading || selectedQuizTypes.length === 0}
+            className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            Start Learning
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Loading state
-  if (isLoading) {
+  if (isLoading || view === 'loading') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center">
@@ -243,7 +364,7 @@ export default function LearnPage() {
             </div>
           </div>
           <p className="text-muted-foreground mt-4 text-lg font-medium">Preparing your lesson...</p>
-          <p className="text-muted-foreground/70 text-sm mt-2">Finding the perfect questions for you</p>
+          <p className="text-muted-foreground/70 text-sm mt-2">Creating new materials and questions for you</p>
         </div>
       </div>
     );
@@ -316,7 +437,7 @@ export default function LearnPage() {
     );
   }
 
-  if (!session) return null;
+  if (!session || view !== 'quiz') return null;
 
   const question = session.questions[session.currentIndex];
   const progress = ((session.currentIndex + 1) / session.questions.length) * 100;
