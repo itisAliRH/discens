@@ -53,9 +53,12 @@
       "google": "Google",
       "apple": "Apple",
       "github": "GitHub",
-      "magicLink": "Send Magic Link",
+      "magicLink": "Use Magic Link",
       "magicLinkSuccess": "Check your email for a magic link!",
-      "signUpSuccess": "Check your email for a confirmation link!"
+      "signUpSuccess": "Check your email for a confirmation link!",
+      "loginWithPassword": "Login with Password",
+      "sendMagicLink": "Send Magic Link",
+      "back": "Back"
     },
     "forgotPassword": {
       "title": "Forgot Password?",

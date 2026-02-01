@@ -53,9 +53,12 @@
       "google": "Google",
       "apple": "Apple",
       "github": "GitHub",
-      "magicLink": "Magic Link senden",
+      "magicLink": "Magic Link verwenden",
       "magicLinkSuccess": "Überprüfen Sie Ihre E-Mails für einen Magic Link!",
-      "signUpSuccess": "Überprüfen Sie Ihre E-Mails für einen Bestätigungslink!"
+      "signUpSuccess": "Überprüfen Sie Ihre E-Mails für einen Bestätigungslink!",
+      "loginWithPassword": "Mit Passwort anmelden",
+      "sendMagicLink": "Magic Link senden",
+      "back": "Zurück"
     },
     "forgotPassword": {
       "title": "Passwort vergessen?",
