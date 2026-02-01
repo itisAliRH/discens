@@ -1,5 +1,6 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { NextResponse } from 'next/server';
+import { updateMemorySummary } from '@/lib/ai/memory';
 import type { MaterialType, MaterialCategory, CEFRLevel } from '@/types/database';
 
 /**
@@ -148,6 +149,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Type and content are required' }, { status: 400 });
     }
 
+    // Check for duplicates (for words)
+    if (type === 'word' && content.word) {
+      const wordText = String(content.word).toLowerCase().trim();
+      
+      // Get existing words and check for duplicates
+      const { data: existingMaterials } = await supabase
+        .from('materials')
+        .select('content')
+        .eq('memory_id', memory.id)
+        .eq('type', 'word')
+        .limit(1000); // Check up to 1000 existing words
+      
+      const hasDuplicate = existingMaterials?.some((m: { content: { word?: string } }) => {
+        const existingWord = m.content?.word;
+        return existingWord && existingWord.toLowerCase().trim() === wordText;
+      });
+      
+      if (hasDuplicate) {
+        return NextResponse.json(
+          { error: 'This word already exists in your memory' },
+          { status: 409 }
+        );
+      }
+    }
+
     // Insert material
     const { data: material, error } = await supabase
       .from('materials')
@@ -189,6 +215,42 @@ export async function POST(request: Request) {
         state: 'New',
         due: new Date().toISOString(),
       });
+
+    // Update memory summary asynchronously (non-blocking)
+    // Note: Summary updates are also handled by the memory page after material operations
+    // This is a backup to ensure summary stays updated
+    (async () => {
+      try {
+        const { data: memoryData } = await supabase
+          .from('memories')
+          .select('summary, goals, total_materials, mastered_materials')
+          .eq('id', memory.id)
+          .single();
+        
+        if (memoryData) {
+          const result = await updateMemorySummary({
+            currentSummary: memoryData.summary || '',
+            newMaterials: [{ type: material.type, content: material.content, masteryLevel: 0 }],
+            recentMistakes: [],
+            goals: memoryData.goals || [],
+            totalMaterials: memoryData.total_materials || 0,
+            masteredMaterials: memoryData.mastered_materials || 0,
+          });
+          
+          if (result.success) {
+            await supabase
+              .from('memories')
+              .update({
+                summary: result.summary,
+                summary_updated_at: new Date().toISOString(),
+              })
+              .eq('id', memory.id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to update memory summary:', err);
+      }
+    })();
 
     return NextResponse.json({ material }, { status: 201 });
   } catch (error) {

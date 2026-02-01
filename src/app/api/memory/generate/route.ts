@@ -83,11 +83,30 @@ export async function POST(request: Request) {
       ) as Partial<T>;
     };
 
+    // Check for existing words to avoid duplicates
+    const { data: existingMaterials } = await supabase
+      .from('materials')
+      .select('content')
+      .eq('memory_id', memory.id)
+      .eq('type', 'word');
+    
+    const existingWords = new Set(
+      (existingMaterials || []).map((m: { content: { word?: string } }) => 
+        m.content?.word?.toLowerCase().trim()
+      ).filter(Boolean)
+    );
+
     // Insert generated materials
     const materialsToInsert: Array<Record<string, unknown>> = [];
 
-    // Add words
+    // Add words (filter duplicates)
     result.materials.words?.forEach(word => {
+      const wordKey = word.word.toLowerCase().trim();
+      if (existingWords.has(wordKey)) {
+        return; // Skip duplicate
+      }
+      existingWords.add(wordKey); // Track in current batch too
+      
       materialsToInsert.push({
         memory_id: memory.id,
         type: 'word',
@@ -101,7 +120,11 @@ export async function POST(request: Request) {
           partOfSpeech: word.partOfSpeech,
           pluralForm: word.pluralForm,
         }),
-        categories: [word.category as MaterialCategory],
+        categories: Array.isArray(word.categories)
+          ? word.categories.slice(0, 5).filter((cat): cat is MaterialCategory => 
+              ['daily_life', 'travel', 'work', 'shopping', 'health', 'food', 'housing', 'education', 'entertainment', 'social'].includes(cat)
+            )
+          : ['daily_life' as MaterialCategory],
         difficulty_level: word.difficultyLevel,
         mastery_level: 0,
         cefr_level: word.cefrLevel as CEFRLevel,
