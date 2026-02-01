@@ -48,13 +48,8 @@ function cleanWordField(word: string, article: string | null): string {
  */
 export async function POST(request: Request) {
   try {
-    const supabase = await createUntypedServerClient();
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    // Don't require authentication for word generation
+    // Users will be prompted to log in when saving the words
     const body: GenerateWordsRequest = await request.json();
     const { description, targetLanguage, nativeLanguage, selectedCategories = ['daily_life'] } = body;
 

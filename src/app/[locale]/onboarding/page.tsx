@@ -344,10 +344,15 @@ export default function OnboardingPage() {
   // Auto-complete when preferences are loaded
   useEffect(() => {
     if (shouldAutoComplete && targetLanguage && isLoggedIn) {
-      handleComplete();
+      // If we have generated words, use handleWordsConfirm, otherwise handleComplete
+      if (generatedWords && generatedWords.length > 0) {
+        handleWordsConfirm();
+      } else {
+        handleComplete();
+      }
       setShouldAutoComplete(false);
     }
-  }, [shouldAutoComplete, targetLanguage, isLoggedIn]);
+  }, [shouldAutoComplete, targetLanguage, isLoggedIn, generatedWords, handleWordsConfirm, handleComplete]);
 
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center p-4">
