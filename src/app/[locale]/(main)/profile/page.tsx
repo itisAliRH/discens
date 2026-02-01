@@ -1,6 +1,7 @@
 import { createUntypedServerClient } from '@/lib/supabase/server-untyped';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { getUserTier } from '@/lib/pricing/subscription';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 import {
@@ -67,10 +68,11 @@ export default async function ProfilePage() {
   const xpForNextLevel = Math.pow(level, 2) * 100;
   const xpProgress = ((xp - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel)) * 100;
 
-  // Mock current subscription (in a real app, fetch from database)
+  // Get real subscription tier
+  const subscriptionTier = await getUserTier(supabase, user.id);
   const currentSubscription = {
-    tier: 'free',
-    name: 'Free',
+    tier: subscriptionTier,
+    name: subscriptionTier === 'super_plus' ? 'Super Plus' : subscriptionTier === 'plus' ? 'Plus' : 'Free',
   };
 
   return (

@@ -17,6 +17,7 @@ import {
 import { MdOutlineWavingHand } from '@/components/ui/icons';
 import { AnimatedSection, AnimatedStatCard } from '@/components/ui/DashboardAnimations';
 import UpgradeBanner from '@/components/pricing/UpgradeBanner';
+import { getUserTier } from '@/lib/pricing/subscription';
 
 // Force dynamic rendering - this page requires authentication
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,9 @@ export default async function DashboardPage() {
   const memory = memoryResult.data as Memory | null;
   const streak = streakResult.data as Streak | null;
 
+  // Get user's subscription tier
+  const subscriptionTier = await getUserTier(supabase, user.id);
+
   // Check if onboarding needed - redirect if memory doesn't exist or has no summary
   if (!memory || !memory.summary) {
     redirect('/onboarding');
@@ -72,7 +76,7 @@ export default async function DashboardPage() {
       </AnimatedSection>
 
       {/* Upgrade Banner - Only for Free users */}
-      <UpgradeBanner currentTier="free" />
+      <UpgradeBanner currentTier={subscriptionTier} />
 
       {/* Stats Cards */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
