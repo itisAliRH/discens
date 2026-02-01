@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   LuHouse,
   LuBookOpen,
@@ -30,6 +33,7 @@ export default function MainLayout({
         <div className="flex items-center justify-around h-16">
           <MobileNavLink href="/dashboard" icon={<LuHouse />} label="Home" />
           <MobileNavLink href="/learn" icon={<LuBookOpen />} label="Learn" />
+          <MobileNavLink href="/memory" icon={<LuBrain />} label="Memory" />
           <MobileNavLink href="/conversation" icon={<LuMessageCircle />} label="Talk" />
           <MobileNavLink href="/history" icon={<LuHistory />} label="History" />
           <MobileNavLink href="/profile" icon={<LuUser />} label="Profile" />
@@ -43,13 +47,20 @@ export default function MainLayout({
 }
 
 function MobileNavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  const pathname = usePathname();
+  const isActive = pathname?.includes(href);
+
   return (
     <Link
       href={href}
-      className="flex flex-col items-center gap-1 px-3 py-1 text-muted-foreground hover:text-foreground transition-colors"
+      className={`flex flex-col items-center gap-1 px-3 py-1 transition-colors ${
+        isActive
+          ? 'text-primary'
+          : 'text-muted-foreground hover:text-foreground'
+      }`}
     >
       <span className="w-5 h-5">{icon}</span>
-      <span className="text-xs">{label}</span>
+      <span className="text-xs font-medium">{label}</span>
     </Link>
   );
 }
