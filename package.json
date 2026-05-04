@@ -12,7 +12,7 @@
     "@ai-sdk/openai": "^3.0.24",
     "@elevenlabs/elevenlabs-js": "^2.33.0",
     "@elevenlabs/react": "^0.13.1",
-    "@langchain/core": "^1.1.18",
+    "@langchain/core": "^1.1.44",
     "@langchain/openai": "^1.2.4",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",
