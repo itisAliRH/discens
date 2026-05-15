@@ -1,5 +1,33 @@
 # Discens - AI-Powered Language Learning App
 
+## Context
+
+Discens started as a 48-hour hackathon prototype. The goal was to explore how AI, spaced repetition, and voice interaction can support language learning in a practical product workflow.
+
+The project focuses on rapid product execution, clear UX flows, and integration of modern web and AI tooling. It combines Next.js, Supabase, OpenAI, ElevenLabs, and FSRS-based spaced repetition to support personalized learning, AI-generated quizzes, and voice-based practice.
+
+## What this project demonstrates
+
+- Rapid full-stack product development under time constraints
+- AI feature integration with OpenAI and ElevenLabs
+- User authentication and data persistence with Supabase
+- FSRS-based spaced repetition for review scheduling
+- Modern frontend implementation with Next.js and Tailwind CSS
+- Product thinking around onboarding, learning sessions, review flows, and progress tracking
+
+## Current status
+
+This project is a hackathon-origin prototype, not a polished commercial product. Some flows were refined after the initial build, but the main value of the project is demonstrating fast execution, product architecture, AI integration, and frontend/backend implementation.
+
+## What would improve next
+
+- Add stronger test coverage for core learning flows
+- Improve observability for AI-generated content
+- Add better guardrails for hallucinated quiz content
+- Polish onboarding and subscription flows
+- Add E2E tests for review and conversation sessions
+- Improve deployment and environment setup documentation
+
 A personalized language learning platform powered by AI, built with Next.js, Supabase, and OpenAI.
 
 ## Features
