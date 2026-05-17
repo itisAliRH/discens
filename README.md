@@ -1,10 +1,14 @@
 # Discens - AI-Powered Language Learning App
 
+A personalized language learning platform powered by AI, built with Next.js, Supabase, and OpenAI.
+
 ## Context
 
 Discens started as a 48-hour hackathon prototype. The goal was to explore how AI, spaced repetition, and voice interaction can support language learning in a practical product workflow.
 
 The project focuses on rapid product execution, clear UX flows, and integration of modern web and AI tooling. It combines Next.js, Supabase, OpenAI, ElevenLabs, and FSRS-based spaced repetition to support personalized learning, AI-generated quizzes, and voice-based practice.
+
+It was developed and improved with Cursor, which sped up scaffolding, implementation exploration, refactoring, and documentation. However, final decisions, review, testing, and product trade-offs continued to be guided by humans.
 
 ## What this project demonstrates
 
@@ -13,11 +17,12 @@ The project focuses on rapid product execution, clear UX flows, and integration 
 - User authentication and data persistence with Supabase
 - FSRS-based spaced repetition for review scheduling
 - Modern frontend implementation with Next.js and Tailwind CSS
+- Practical use of coding agents in a real product prototype
 - Product thinking around onboarding, learning sessions, review flows, and progress tracking
 
 ## Current status
 
-This project is a hackathon-origin prototype, not a polished commercial product. Some flows were refined after the initial build, but the main value of the project is demonstrating fast execution, product architecture, AI integration, and frontend/backend implementation.
+This project is a hackathon-origin prototype, not a polished commercial product. Some flows were refined after the initial build, but the main value of the project is demonstrating fast execution, product architecture, AI integration, AI-assisted development workflow, and frontend/backend implementation.
 
 ## What would improve next
 
@@ -27,8 +32,6 @@ This project is a hackathon-origin prototype, not a polished commercial product.
 - Polish onboarding and subscription flows
 - Add E2E tests for review and conversation sessions
 - Improve deployment and environment setup documentation
-
-A personalized language learning platform powered by AI, built with Next.js, Supabase, and OpenAI.
 
 ## Features
 
@@ -68,7 +71,7 @@ A personalized language learning platform powered by AI, built with Next.js, Sup
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/discens.git
+git clone https://github.com/itisAliRH/discens.git
 cd discens
 ```
 
@@ -127,7 +130,7 @@ See our comprehensive [Cloudflare Deployment Guide](./docs/CLOUDFLARE_DEPLOYMENT
 
 ### Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/discens)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/itisAliRH/discens)
 
 1. Click the button above or go to [Vercel](https://vercel.com/new)
 2. Import your repository
@@ -160,7 +163,9 @@ discens/
 ## Key Features Explained
 
 ### Memory System
+
 The core of Discens is the "Memory" - a personalized database of words, phrases, and grammar rules that grows as you learn. Each material has:
+
 - Mastery level (0-5)
 - CEFR level (A1-C2)
 - Categories (travel, work, food, etc.)
@@ -168,7 +173,9 @@ The core of Discens is the "Memory" - a personalized database of words, phrases,
 - FSRS review scheduling
 
 ### AI Conversations
+
 Practice real-world scenarios with AI characters:
+
 - Café ordering
 - Doctor appointments
 - Job interviews
@@ -177,9 +184,11 @@ Practice real-world scenarios with AI characters:
 Choose voice or text mode, with background ambiance for immersion.
 
 ### Smart Reviews
+
 Uses the FSRS (Free Spaced Repetition Scheduler) algorithm to show you materials at optimal intervals for retention.
 
 ### Gamification
+
 - Daily streaks
 - XP and levels
 - Badges for achievements
@@ -228,8 +237,8 @@ This project is licensed under the MIT License.
 ## Support
 
 - 📧 Email: support@discens.app
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/discens/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/discens/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/itisAliRH/discens/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/itisAliRH/discens/discussions)
 
 ## Acknowledgments
 
